@@ -464,6 +464,19 @@
   vertical-align: middle;
 }
 .score-cell { font-weight: 700; color: var(--white); }
+
+/* Condensed icon-header stat columns (correct / incorrect / score) */
+.leaderboard th.col-icon,
+.leaderboard td.col-icon {
+  text-align: center;
+  width: 44px;
+  white-space: nowrap;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.leaderboard th.col-icon {
+  font-size: 15px;
+}
 .mono-dim { color: var(--white-60); font-size: 12px; }
 
 .table-scroll { width: 100%; overflow-x: auto; }

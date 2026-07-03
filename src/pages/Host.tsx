@@ -346,9 +346,15 @@ function Dashboard() {
             <thead>
               <tr>
                 <th>Agent</th>
-                <th>Answered</th>
-                <th>Correct</th>
-                <th>Score</th>
+                <th className="col-icon" title="Correct" aria-label="Correct">
+                  ✅
+                </th>
+                <th className="col-icon" title="Incorrect" aria-label="Incorrect">
+                  ❌
+                </th>
+                <th className="col-icon" title="Score" aria-label="Score">
+                  🏆
+                </th>
                 <th></th>
               </tr>
             </thead>
@@ -368,9 +374,9 @@ function Dashboard() {
                       {s.name}
                       <div className="mono-dim">{s.codename ?? ''}</div>
                     </td>
-                    <td className="mono-dim">{s.answered}</td>
-                    <td className="mono-dim">{s.correct}</td>
-                    <td className="score-cell">{s.score}</td>
+                    <td className="mono-dim col-icon">{s.correct}</td>
+                    <td className="mono-dim col-icon">{s.answered - s.correct}</td>
+                    <td className="score-cell col-icon">{s.score}</td>
                     <td>
                       {s.is_eliminated ? (
                         <button
