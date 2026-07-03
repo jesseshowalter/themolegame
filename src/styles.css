@@ -358,6 +358,102 @@
   text-transform: uppercase;
 }
 
+/* Segmented control tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--accent-40);
+  border-radius: var(--radius);
+  background: var(--panel);
+  width: 100%;
+  overflow-x: auto;
+}
+.tab {
+  flex: 1;
+  min-width: max-content;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--white-60);
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.tab:hover {
+  color: var(--white);
+}
+.tab.active {
+  background: var(--accent);
+  color: var(--bg);
+  box-shadow: var(--glow-accent);
+}
+
+/* Players roster panel */
+.player-add {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.player-add .q-input {
+  flex: 1;
+  min-width: 160px;
+}
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.player-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border: 1px solid var(--accent-40);
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.player-row.eliminated {
+  opacity: 0.5;
+}
+.player-id {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.player-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--white);
+}
+.tag-elim {
+  color: var(--danger);
+  font-size: 11px;
+  font-weight: 700;
+}
+.player-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.player-edit {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  align-items: center;
+}
+.player-edit .q-input {
+  flex: 1;
+  min-width: 140px;
+}
+
 /* Round control strip */
 .rounds {
   display: grid;
@@ -861,4 +957,6 @@
   .user-dossier { transform: scale(0.85); transform-origin: bottom left; }
   .q-item { flex-direction: column; }
   .q-meta-grid { grid-template-columns: 1fr; }
+  .tab { padding: 9px 6px; font-size: 10.5px; letter-spacing: 0.02em; }
+  .tabs { gap: 2px; }
 }

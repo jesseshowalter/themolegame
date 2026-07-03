@@ -40,7 +40,7 @@ In the Supabase dashboard, open **SQL Editor → New query** and run, in order:
 1. Paste the contents of [`supabase/schema.sql`](supabase/schema.sql) → **Run**. This creates the tables, the grading trigger, the leaderboard view, security policies, and enables realtime.
 2. Paste the contents of [`supabase/seed.sql`](supabase/seed.sql) → **Run**. This loads a sample 12-person roster and all four rounds so you can test immediately. **Swap the names and questions for your own** later (see "Authoring your night" below).
 
-> **Already set up before the host tools existed?** Run [`supabase/host-tools.sql`](supabase/host-tools.sql) once. It enables **editing and deleting questions**, the **Reset game** button, and **highlighting correct answers** for the host without exposing them to guests. Set the handler passcode in that file to match your `VITE_HOST_PASSCODE`. Fresh runs of `schema.sql` already include all of this.
+> **Already set up before the host tools existed?** Run [`supabase/host-tools.sql`](supabase/host-tools.sql) once. It enables **editing and deleting questions**, **removing players**, the **Reset game** button, and **highlighting correct answers** for the host without exposing them to guests. Set the handler passcode in that file to match your `VITE_HOST_PASSCODE`. Fresh runs of `schema.sql` already include all of this.
 
 ### 3. Configure and run locally
 ```bash
@@ -66,6 +66,10 @@ Open `http://localhost:5173/play` — you should see the roster instead of the
 ---
 
 ## Running the night
+
+The **`/host`** screen is organized into four tabs: **Rounds** (open/close each
+round), **Standings** (live scores + eliminate), **Players** (manage the roster —
+add, rename, eliminate, remove), and **Advanced** (bulk JSON import + reset game).
 
 1. On your laptop, open **`/join`** and project/show it — or open **`/host`** to drive the game.
 2. Guests scan the QR → land on `/play` → tap their name → they're in, sitting on the **STAND BY** screen.
@@ -165,6 +169,7 @@ src/
     importQuestions.ts parser/validator for the host question uploader
   components/        TerminalChrome, Wordmark, Chevron, ConfigBanner, useUptime
     RoundEditor.tsx    per-round add/edit/delete question editor
+    PlayersPanel.tsx   roster management (add / rename / eliminate / remove)
   pages/
     PlayLogin.tsx    roster grid + instant login effect
     WaitRoom.tsx     holding screen; realtime-routes into open rounds

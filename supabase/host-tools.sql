@@ -19,9 +19,11 @@
 grant select (id, quiz_id, order_index, prompt, type, options, points, meta_id, meta_coord)
   on public.questions to anon, authenticated;
 
--- 2) Let the host clear all answers on reset --------------------------------
+-- 2) Let the host clear all answers on reset, and remove players ------------
 drop policy if exists responses_delete on public.responses;
 create policy responses_delete on public.responses for delete using (true);
+drop policy if exists players_delete on public.players;
+create policy players_delete on public.players for delete using (true);
 
 -- 3) Handler-only answer-key access -----------------------------------------
 -- A tiny config table holds the handler passcode. RLS + no policy means players

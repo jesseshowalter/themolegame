@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import type { LeaderboardRow, Quiz, QuizStatus } from '../lib/types';
+import type { LeaderboardRow, Player, Quiz, QuizStatus } from '../lib/types';
 import ConfigBanner from '../components/ConfigBanner';
 import RoundEditor from '../components/RoundEditor';
+import PlayersPanel from '../components/PlayersPanel';
 import {
   parseQuestionImport,
   IMPORT_TEMPLATE,
@@ -77,7 +78,9 @@ function Gate({ onUnlock }: { onUnlock: () => void }) {
 function Dashboard() {
   const [rounds, setRounds] = useState<Quiz[]>([]);
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
+  const [players, setPlayers] = useState<Player[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [tab, setTab] = useState<'rounds' | 'standings' | 'players' | 'advanced'>('rounds');
   const [view, setView] = useState<View>('all');
   const [busy, setBusy] = useState(false);
   const [editingRoundId, setEditingRoundId] = useState<string | null>(null);
@@ -93,13 +96,15 @@ function Dashboard() {
   const [importMsg, setImportMsg] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [{ data: qs }, { data: lb }, { data: pq }] = await Promise.all([
+    const [{ data: qs }, { data: lb }, { data: pq }, { data: pl }] = await Promise.all([
       supabase.from('quizzes').select('*').order('round_number'),
       supabase.from('leaderboard').select('*'),
       supabase.from('public_questions').select('quiz_id'),
+      supabase.from('players').select('*').order('name'),
     ]);
     setRounds(qs ?? []);
     setRows((lb as LeaderboardRow[]) ?? []);
+    setPlayers((pl as Player[]) ?? []);
     const c: Record<string, number> = {};
     (pq ?? []).forEach((row) => {
       c[row.quiz_id] = (c[row.quiz_id] ?? 0) + 1;
@@ -299,7 +304,35 @@ function Dashboard() {
 
       <ConfigBanner />
 
+      <div className="tabs" role="tablist">
+        <button
+          className={`tab${tab === 'rounds' ? ' active' : ''}`}
+          onClick={() => setTab('rounds')}
+        >
+          Rounds
+        </button>
+        <button
+          className={`tab${tab === 'standings' ? ' active' : ''}`}
+          onClick={() => setTab('standings')}
+        >
+          Standings
+        </button>
+        <button
+          className={`tab${tab === 'players' ? ' active' : ''}`}
+          onClick={() => setTab('players')}
+        >
+          Players
+        </button>
+        <button
+          className={`tab${tab === 'advanced' ? ' active' : ''}`}
+          onClick={() => setTab('advanced')}
+        >
+          Advanced
+        </button>
+      </div>
+
       {/* Round controls */}
+      {tab === 'rounds' && (
       <div>
         <p className="section-label">Rounds</p>
         <div className="rounds">
@@ -338,8 +371,10 @@ function Dashboard() {
           ))}
         </div>
       </div>
+      )}
 
       {/* Leaderboard / elimination */}
+      {tab === 'standings' && (
       <div>
         <p className="section-label">
           Standings — {view === 'all' ? 'cumulative' : `round ${view}`} · tap a header to sort
@@ -468,8 +503,14 @@ function Dashboard() {
           </table>
         </div>
       </div>
+      )}
 
-      {/* Bulk JSON import (advanced / optional) */}
+      {/* Players / roster */}
+      {tab === 'players' && <PlayersPanel players={players} onChanged={refresh} />}
+
+      {/* Advanced: bulk import + reset */}
+      {tab === 'advanced' && (
+      <>
       <details className="bulk-import">
         <summary>Bulk import questions (paste JSON)</summary>
         <p className="setup-hint" style={{ marginTop: 12 }}>
@@ -558,6 +599,8 @@ function Dashboard() {
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

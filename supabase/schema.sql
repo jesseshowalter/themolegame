@@ -136,6 +136,7 @@ alter table public.responses enable row level security;
 create policy players_read   on public.players for select using (true);
 create policy players_update on public.players for update using (true) with check (true);
 create policy players_insert on public.players for insert with check (true);
+create policy players_delete on public.players for delete using (true);
 
 -- quizzes: everyone reads; host opens/closes rounds.
 create policy quizzes_read   on public.quizzes for select using (true);
