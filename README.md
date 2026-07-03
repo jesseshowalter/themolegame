@@ -40,7 +40,7 @@ In the Supabase dashboard, open **SQL Editor → New query** and run, in order:
 1. Paste the contents of [`supabase/schema.sql`](supabase/schema.sql) → **Run**. This creates the tables, the grading trigger, the leaderboard view, security policies, and enables realtime.
 2. Paste the contents of [`supabase/seed.sql`](supabase/seed.sql) → **Run**. This loads a sample 12-person roster and all four rounds so you can test immediately. **Swap the names and questions for your own** later (see "Authoring your night" below).
 
-> **Already set up before the host tools existed?** Run [`supabase/host-tools.sql`](supabase/host-tools.sql) once. It enables the **Reset game** button (permission to clear answers) and lets the question editor **highlight correct answers** for the host without exposing them to guests. Set the handler passcode in that file to match your `VITE_HOST_PASSCODE`. Fresh runs of `schema.sql` already include all of this.
+> **Already set up before the host tools existed?** Run [`supabase/host-tools.sql`](supabase/host-tools.sql) once. It enables **editing and deleting questions**, the **Reset game** button, and **highlighting correct answers** for the host without exposing them to guests. Set the handler passcode in that file to match your `VITE_HOST_PASSCODE`. Fresh runs of `schema.sql` already include all of this.
 
 ### 3. Configure and run locally
 ```bash

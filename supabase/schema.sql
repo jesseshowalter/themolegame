@@ -160,6 +160,11 @@ grant  select on public.public_questions to anon, authenticated;
 grant  select on public.leaderboard       to anon, authenticated;
 -- Host still needs to author questions through the app (insert/update/delete):
 grant  insert, update, delete on public.questions to anon, authenticated;
+-- Postgres requires SELECT on columns used in a WHERE clause, so UPDATE/DELETE
+-- ... WHERE id = ... needs column SELECT. Grant every column EXCEPT the answer
+-- key, so the host can edit/delete questions while correct_index stays hidden.
+grant  select (id, quiz_id, order_index, prompt, type, options, points, meta_id, meta_coord)
+  on public.questions to anon, authenticated;
 
 -- ============================================================================
 -- Realtime: push round open/close and live answers to connected clients.
