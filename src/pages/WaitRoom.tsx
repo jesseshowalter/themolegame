@@ -10,6 +10,8 @@ import ConfigBanner from '../components/ConfigBanner';
 export default function WaitRoom() {
   const navigate = useNavigate();
   const session = getSession();
+  // First name of the logged-in player, for personalized wait copy.
+  const agentName = (session?.name?.trim().split(/\s+/)[0] || 'AGENT').toUpperCase();
   const [eliminated, setEliminated] = useState(false);
   const [completedRound, setCompletedRound] = useState<Quiz | null>(null);
   const [checking, setChecking] = useState(true);
@@ -111,13 +113,13 @@ export default function WaitRoom() {
         ) : completedRound ? (
           <>
             <p className="mono-label">// {completedRound.title} — RESPONSES LOCKED</p>
-            <h2 className="status-headline">TRANSMISSION RECEIVED</h2>
+            <h2 className="status-headline">GOOD WORK, {agentName}</h2>
             <p className="status-sub cursor">AWAITING NEXT DIRECTIVE</p>
           </>
         ) : (
           <>
             <p className="mono-label">// NO ACTIVE ROUND</p>
-            <h2 className="status-headline">STAND BY, AGENT</h2>
+            <h2 className="status-headline">STAND BY, {agentName}</h2>
             <p className="status-sub cursor">
               The next quiz opens when the host initiates it
             </p>
