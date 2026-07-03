@@ -469,13 +469,24 @@
 .leaderboard th.col-icon,
 .leaderboard td.col-icon {
   text-align: center;
-  width: 44px;
+  width: 52px;
   white-space: nowrap;
   padding-left: 6px;
   padding-right: 6px;
 }
 .leaderboard th.col-icon {
   font-size: 15px;
+}
+
+/* Sortable headers */
+.leaderboard th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.12s ease;
+}
+.leaderboard th.sortable:hover,
+.leaderboard th.sortable.active {
+  color: var(--white);
 }
 .mono-dim { color: var(--white-60); font-size: 12px; }
 

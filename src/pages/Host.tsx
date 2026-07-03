@@ -83,6 +83,10 @@ function Dashboard() {
   const [editingRoundId, setEditingRoundId] = useState<string | null>(null);
   const [confirmEliminateId, setConfirmEliminateId] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [sort, setSort] = useState<{
+    key: 'agent' | 'correct' | 'incorrect' | 'score';
+    dir: 'asc' | 'desc';
+  }>({ key: 'score', dir: 'asc' }); // default: lowest score first (worst)
 
   // Question-upload panel state.
   const [importText, setImportText] = useState('');
@@ -240,17 +244,37 @@ function Dashboard() {
       cur.score += r.score;
       byPlayer.set(r.player_id, cur);
     }
-    return [...byPlayer.values()].sort(
-      (a, b) => a.score - b.score || a.correct - b.correct || a.name.localeCompare(b.name)
-    );
-  }, [rows, view]);
+    const metric = (s: Standing) =>
+      sort.key === 'correct'
+        ? s.correct
+        : sort.key === 'incorrect'
+          ? s.answered - s.correct
+          : s.score; // 'score' (agent is handled by name below)
+    const dir = sort.dir === 'asc' ? 1 : -1;
+    return [...byPlayer.values()].sort((a, b) => {
+      let d = sort.key === 'agent' ? a.name.localeCompare(b.name) : metric(a) - metric(b);
+      if (d === 0) d = a.name.localeCompare(b.name); // stable tiebreak
+      return d * dir;
+    });
+  }, [rows, view, sort]);
 
   // Lowest score among still-active agents who have actually answered — the
   // elimination candidate(s).
   const worstScore = useMemo(() => {
     const live = standings.filter((s) => !s.is_eliminated && s.answered > 0);
-    return live.length ? live[0].score : null;
+    return live.length ? Math.min(...live.map((s) => s.score)) : null;
   }, [standings]);
+
+  // Clicking a header sorts by it; clicking again flips direction.
+  function toggleSort(key: 'agent' | 'correct' | 'incorrect' | 'score') {
+    setSort((prev) =>
+      prev.key === key
+        ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+        : { key, dir: key === 'agent' ? 'asc' : 'desc' } // names A→Z, stats high→low
+    );
+  }
+  const sortArrow = (key: string) =>
+    sort.key === key ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : '';
 
   // Full-screen per-round question editor.
   const editingRound = rounds.find((r) => r.id === editingRoundId);
@@ -318,7 +342,8 @@ function Dashboard() {
       {/* Leaderboard / elimination */}
       <div>
         <p className="section-label">
-          Standings — worst first {view === 'all' ? '(cumulative)' : `(round ${view})`}
+          Standings — {view === 'all' ? 'cumulative' : `round ${view}`} · tap a header to sort
+          {' · '}lowest score flagged
         </p>
 
         <div className="round-actions" style={{ marginBottom: 16, flexWrap: 'wrap' }}>
@@ -345,15 +370,35 @@ function Dashboard() {
           <table className="leaderboard">
             <thead>
               <tr>
-                <th>Agent</th>
-                <th className="col-icon" title="Correct" aria-label="Correct">
-                  ✅
+                <th
+                  className={`sortable${sort.key === 'agent' ? ' active' : ''}`}
+                  onClick={() => toggleSort('agent')}
+                >
+                  Agent{sortArrow('agent')}
                 </th>
-                <th className="col-icon" title="Incorrect" aria-label="Incorrect">
-                  ❌
+                <th
+                  className={`col-icon sortable${sort.key === 'correct' ? ' active' : ''}`}
+                  title="Correct"
+                  aria-label="Correct"
+                  onClick={() => toggleSort('correct')}
+                >
+                  ✅{sortArrow('correct')}
                 </th>
-                <th className="col-icon" title="Score" aria-label="Score">
-                  🏆
+                <th
+                  className={`col-icon sortable${sort.key === 'incorrect' ? ' active' : ''}`}
+                  title="Incorrect"
+                  aria-label="Incorrect"
+                  onClick={() => toggleSort('incorrect')}
+                >
+                  ❌{sortArrow('incorrect')}
+                </th>
+                <th
+                  className={`col-icon sortable${sort.key === 'score' ? ' active' : ''}`}
+                  title="Score"
+                  aria-label="Score"
+                  onClick={() => toggleSort('score')}
+                >
+                  🏆{sortArrow('score')}
                 </th>
                 <th></th>
               </tr>
