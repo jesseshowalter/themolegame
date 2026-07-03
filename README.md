@@ -83,13 +83,26 @@ Open `http://localhost:5173/play` — you should see the roster instead of the
 
 ## Authoring your night
 
-### Upload questions from the host screen (easiest)
-In **`/host`**, scroll to **Upload questions**, click **Load template** to see the
-format, paste your own, and hit **Upload**. It validates live (green preview or
-red errors) and writes straight to the database. Uploading a round **replaces
-that round's** questions; rounds you leave out are untouched.
+### Edit questions per round from the host screen (easiest)
+In **`/host`**, each round card has a **QUESTIONS ›** button. It opens a full-page
+editor for that round where you can:
+- **Add** a question — type the prompt, choose Multiple choice or True/False, fill
+  the options, and **click a letter (A/B/C…) to mark the correct answer**.
+- **Edit** or **Delete** any existing question.
+- Add questions **on the fly during the event** — great for improvising.
 
-The JSON format is forgiving:
+Hit **← Dashboard** to return to round controls and the leaderboard.
+
+> **Note on the answer key:** because guests can't read the answers (anti-cheat),
+> the app can't display a *saved* question's correct option — so when you **edit**
+> an existing question you'll re-pick the correct answer. Newly added questions
+> save their correct answer normally.
+
+### Bulk import (optional)
+For pasting many questions at once, expand **Bulk import questions (paste JSON)**
+at the bottom of `/host`. Click **Load template**, paste your set, and hit
+**Upload** — it validates live and replaces each included round's questions
+(rounds you leave out are untouched). The JSON format is forgiving:
 ```jsonc
 {
   "rounds": [
@@ -150,6 +163,7 @@ src/
     session.ts         device-local "instant login" session
     importQuestions.ts parser/validator for the host question uploader
   components/        TerminalChrome, Wordmark, Chevron, ConfigBanner, useUptime
+    RoundEditor.tsx    per-round add/edit/delete question editor
   pages/
     PlayLogin.tsx    roster grid + instant login effect
     WaitRoom.tsx     holding screen; realtime-routes into open rounds

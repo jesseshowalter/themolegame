@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { LeaderboardRow, Quiz, QuizStatus } from '../lib/types';
 import ConfigBanner from '../components/ConfigBanner';
+import RoundEditor from '../components/RoundEditor';
 import {
   parseQuestionImport,
   IMPORT_TEMPLATE,
@@ -79,6 +80,7 @@ function Dashboard() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [view, setView] = useState<View>('all');
   const [busy, setBusy] = useState(false);
+  const [editingRoundId, setEditingRoundId] = useState<string | null>(null);
 
   // Question-upload panel state.
   const [importText, setImportText] = useState('');
@@ -253,6 +255,20 @@ function Dashboard() {
     return live.length ? live[0].score : null;
   }, [standings]);
 
+  // Full-screen per-round question editor.
+  const editingRound = rounds.find((r) => r.id === editingRoundId);
+  if (editingRound) {
+    return (
+      <RoundEditor
+        round={editingRound}
+        onClose={() => {
+          setEditingRoundId(null);
+          refresh();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="host">
       <div className="host-head">
@@ -268,9 +284,14 @@ function Dashboard() {
         <div className="rounds">
           {rounds.map((r) => (
             <div key={r.id} className={`round-card${r.status === 'open' ? ' active' : ''}`}>
-              <span className="round-num">
-                ROUND {r.round_number} · {counts[r.id] ?? 0}Q
-              </span>
+              <div className="round-card-top">
+                <span className="round-num">
+                  ROUND {r.round_number} · {counts[r.id] ?? 0}Q
+                </span>
+                <button className="round-edit" onClick={() => setEditingRoundId(r.id)}>
+                  QUESTIONS ›
+                </button>
+              </div>
               <span className="round-title">{r.title}</span>
               <span className={`round-status ${r.status}`}>● {r.status}</span>
               <div className="round-actions">
@@ -387,12 +408,13 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Upload questions */}
-      <div>
-        <p className="section-label">Upload questions</p>
-        <p className="setup-hint">
-          Paste JSON for one or more rounds and hit Upload — it replaces that round's
-          questions. Rounds you don't include are left untouched.
+      {/* Bulk JSON import (advanced / optional) */}
+      <details className="bulk-import">
+        <summary>Bulk import questions (paste JSON)</summary>
+        <p className="setup-hint" style={{ marginTop: 12 }}>
+          For editing questions one at a time, use the <strong>QUESTIONS</strong> button on a
+          round card above. This panel is for pasting a full JSON set at once — it replaces
+          each included round's questions and leaves others untouched.
         </p>
 
         <textarea
@@ -444,7 +466,7 @@ function Dashboard() {
           </div>
         )}
         {importMsg && <p className="import-msg">{importMsg}</p>}
-      </div>
+      </details>
 
       {/* Danger zone */}
       <div className="danger-zone">
