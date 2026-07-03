@@ -40,7 +40,7 @@ In the Supabase dashboard, open **SQL Editor → New query** and run, in order:
 1. Paste the contents of [`supabase/schema.sql`](supabase/schema.sql) → **Run**. This creates the tables, the grading trigger, the leaderboard view, security policies, and enables realtime.
 2. Paste the contents of [`supabase/seed.sql`](supabase/seed.sql) → **Run**. This loads a sample 12-person roster and all four rounds so you can test immediately. **Swap the names and questions for your own** later (see "Authoring your night" below).
 
-> **Already set up before the host tools existed?** Run [`supabase/host-tools.sql`](supabase/host-tools.sql) once. It adds the one policy the **Reset game** button needs (permission to clear answers). Fresh runs of `schema.sql` already include it.
+> **Already set up before the host tools existed?** Run [`supabase/host-tools.sql`](supabase/host-tools.sql) once. It enables the **Reset game** button (permission to clear answers) and lets the question editor **highlight correct answers** for the host without exposing them to guests. Set the handler passcode in that file to match your `VITE_HOST_PASSCODE`. Fresh runs of `schema.sql` already include all of this.
 
 ### 3. Configure and run locally
 ```bash
@@ -93,10 +93,11 @@ editor for that round where you can:
 
 Hit **← Dashboard** to return to round controls and the leaderboard.
 
-> **Note on the answer key:** because guests can't read the answers (anti-cheat),
-> the app can't display a *saved* question's correct option — so when you **edit**
-> an existing question you'll re-pick the correct answer. Newly added questions
-> save their correct answer normally.
+> **Seeing the correct answer:** once you've run [`supabase/host-tools.sql`](supabase/host-tools.sql)
+> and set the handler passcode to match your `VITE_HOST_PASSCODE`, the editor
+> **highlights the correct option** (green ✓) and pre-fills it when you edit —
+> while guests still can't read the answer key. Until then, correct answers stay
+> hidden and you re-pick them when editing.
 
 ### Bulk import (optional)
 For pasting many questions at once, expand **Bulk import questions (paste JSON)**

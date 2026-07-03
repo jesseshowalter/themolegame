@@ -108,7 +108,14 @@ export type Database = {
       public_questions: { Row: Omit<Question, 'correct_index'>; Relationships: [] };
       leaderboard: { Row: LeaderboardRow; Relationships: [] };
     };
-    Functions: Record<string, never>;
+    Functions: {
+      // Handler-only reader — returns full questions incl. the answer key when
+      // the caller supplies the host passcode.
+      admin_questions: {
+        Args: { p_passcode: string; p_quiz: string };
+        Returns: Question[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

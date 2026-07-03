@@ -167,3 +167,36 @@ grant  insert, update, delete on public.questions to anon, authenticated;
 alter publication supabase_realtime add table public.quizzes;
 alter publication supabase_realtime add table public.responses;
 alter publication supabase_realtime add table public.players;
+
+-- ============================================================================
+-- Handler-only answer-key access (for the /host question editor).
+-- Players never get correct_index; the host reads it via a passcode-gated
+-- SECURITY DEFINER function.
+-- ============================================================================
+create table if not exists public.app_config (
+  key   text primary key,
+  value text not null
+);
+alter table public.app_config enable row level security;
+revoke all on public.app_config from anon, authenticated;
+
+-- Set to match your VITE_HOST_PASSCODE. Default matches the app fallback.
+insert into public.app_config (key, value) values ('host_passcode', 'mole-master')
+  on conflict (key) do nothing;
+
+create or replace function public.admin_questions(p_passcode text, p_quiz uuid)
+returns setof public.questions
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_passcode is distinct from (select value from public.app_config where key = 'host_passcode') then
+    raise exception 'unauthorized';
+  end if;
+  return query
+    select * from public.questions where quiz_id = p_quiz order by order_index;
+end;
+$$;
+revoke all on function public.admin_questions(text, uuid) from public;
+grant execute on function public.admin_questions(text, uuid) to anon, authenticated;

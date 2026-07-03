@@ -577,6 +577,13 @@
   border-radius: var(--radius-sm);
   padding: 2px 8px;
 }
+.q-chip.correct {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 700;
+  box-shadow: var(--glow-accent);
+}
 .q-item-actions {
   display: flex;
   gap: 8px;

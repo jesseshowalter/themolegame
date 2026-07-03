@@ -2,10 +2,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Question, Quiz } from '../lib/types';
 
-/** Player-safe row (no correct_index — the key stays hidden even from the host). */
-type ListItem = Omit<Question, 'correct_index'>;
+/**
+ * A question row for the editor. correct_index is present only when the
+ * handler-only reader (admin_questions RPC) is installed; otherwise we fall
+ * back to the answer-key-free public_questions view.
+ */
+type Row = Omit<Question, 'correct_index'> & { correct_index?: number };
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+const PASSCODE = (import.meta.env.VITE_HOST_PASSCODE as string) || 'mole-master';
 
 interface Draft {
   id?: string; // present when editing an existing question
@@ -27,7 +32,8 @@ interface Props {
 }
 
 export default function RoundEditor({ round, onClose }: Props) {
-  const [items, setItems] = useState<ListItem[]>([]);
+  const [items, setItems] = useState<Row[]>([]);
+  const [hasKey, setHasKey] = useState(false); // did the handler reader work?
   const [draft, setDraft] = useState<Draft | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -35,12 +41,24 @@ export default function RoundEditor({ round, onClose }: Props) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const { data } = await supabase
-      .from('public_questions')
-      .select('*')
-      .eq('quiz_id', round.id)
-      .order('order_index');
-    setItems((data as ListItem[]) ?? []);
+    // Prefer the handler-only reader (shows correct answers). Fall back to the
+    // answer-key-free view if the SQL add-on isn't installed / passcode mismatch.
+    const { data: full, error } = await supabase.rpc('admin_questions', {
+      p_passcode: PASSCODE,
+      p_quiz: round.id,
+    });
+    if (!error && full) {
+      setItems(full as Row[]);
+      setHasKey(true);
+    } else {
+      const { data } = await supabase
+        .from('public_questions')
+        .select('*')
+        .eq('quiz_id', round.id)
+        .order('order_index');
+      setItems((data as Row[]) ?? []);
+      setHasKey(false);
+    }
     setLoading(false);
   }, [round.id]);
 
@@ -53,14 +71,16 @@ export default function RoundEditor({ round, onClose }: Props) {
     setDraft(blankDraft());
   }
 
-  function startEdit(q: ListItem) {
+  function startEdit(q: Row) {
     setErr(null);
     setDraft({
       id: q.id,
       prompt: q.prompt,
       type: q.type,
       options: q.type === 'tf' ? ['TRUE', 'FALSE'] : [...q.options],
-      correctIndex: null, // hidden for anti-cheat — host re-picks on edit
+      // Pre-fill the correct answer when the handler reader gave it to us;
+      // otherwise the host re-picks it.
+      correctIndex: q.correct_index ?? null,
       metaId: q.meta_id ?? '',
       metaCoord: q.meta_coord ?? '',
     });
@@ -136,7 +156,7 @@ export default function RoundEditor({ round, onClose }: Props) {
     await load();
   }
 
-  async function remove(q: ListItem) {
+  async function remove(q: Row) {
     setBusy(true);
     setErr(null);
     const { error } = await supabase.from('questions').delete().eq('id', q.id);
@@ -162,6 +182,14 @@ export default function RoundEditor({ round, onClose }: Props) {
         <span className="host-tag">{items.length} question(s)</span>
       </div>
 
+      {!loading && !hasKey && items.length > 0 && (
+        <p className="mono-dim">
+          Correct answers are hidden. To highlight them here, run{' '}
+          <code>supabase/host-tools.sql</code> and set the handler passcode to match your{' '}
+          <code>VITE_HOST_PASSCODE</code>.
+        </p>
+      )}
+
       {/* Question list */}
       <div>
         {loading ? (
@@ -178,7 +206,11 @@ export default function RoundEditor({ round, onClose }: Props) {
                     <div className="q-item-prompt">{q.prompt}</div>
                     <div className="q-item-opts">
                       {q.options.map((o, oi) => (
-                        <span key={oi} className="q-chip">
+                        <span
+                          key={oi}
+                          className={`q-chip${q.correct_index === oi ? ' correct' : ''}`}
+                        >
+                          {q.correct_index === oi ? '✓ ' : ''}
                           {LETTERS[oi]}. {o}
                         </span>
                       ))}
@@ -289,9 +321,9 @@ export default function RoundEditor({ round, onClose }: Props) {
             )}
           </div>
 
-          {draft.id && (
+          {draft.id && draft.correctIndex == null && (
             <p className="mono-dim" style={{ marginTop: 4 }}>
-              Saved answers are hidden for anti-cheat — re-select the correct option before saving.
+              Saved answer is hidden — re-select the correct option before saving.
             </p>
           )}
 
