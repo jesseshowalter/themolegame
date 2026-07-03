@@ -81,6 +81,8 @@ function Dashboard() {
   const [view, setView] = useState<View>('all');
   const [busy, setBusy] = useState(false);
   const [editingRoundId, setEditingRoundId] = useState<string | null>(null);
+  const [confirmEliminateId, setConfirmEliminateId] = useState<string | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   // Question-upload panel state.
   const [importText, setImportText] = useState('');
@@ -129,10 +131,10 @@ function Dashboard() {
     setBusy(false);
   }
 
-  async function eliminate(playerId: string, name: string) {
-    if (!confirm(`Eliminate ${name} from the game?`)) return;
+  async function eliminate(playerId: string) {
     setBusy(true);
     await supabase.from('players').update({ is_eliminated: true }).eq('id', playerId);
+    setConfirmEliminateId(null);
     await refresh();
     setBusy(false);
   }
@@ -202,12 +204,6 @@ function Dashboard() {
 
   // Wipe game STATE (answers, eliminations, round status). Keeps roster + questions.
   async function resetGame() {
-    if (
-      !confirm(
-        'Reset the game?\n\nThis clears ALL answers, brings every eliminated player back, and re-locks all four rounds.\n\nYour roster and questions are kept.'
-      )
-    )
-      return;
     setBusy(true);
     setImportMsg(null);
     const IMPOSSIBLE = '00000000-0000-0000-0000-000000000000';
@@ -218,6 +214,7 @@ function Dashboard() {
       setView('all');
       await refresh();
     } finally {
+      setConfirmReset(false);
       setBusy(false);
     }
   }
@@ -383,11 +380,24 @@ function Dashboard() {
                         >
                           Revive
                         </button>
+                      ) : confirmEliminateId === s.player_id ? (
+                        <span className="confirm-inline">
+                          <button
+                            className="btn-sm warn"
+                            disabled={busy}
+                            onClick={() => eliminate(s.player_id)}
+                          >
+                            Confirm
+                          </button>
+                          <button className="btn-sm" onClick={() => setConfirmEliminateId(null)}>
+                            Cancel
+                          </button>
+                        </span>
                       ) : (
                         <button
                           className="btn-sm warn"
                           disabled={busy}
-                          onClick={() => eliminate(s.player_id, s.name)}
+                          onClick={() => setConfirmEliminateId(s.player_id)}
                         >
                           Eliminate
                         </button>
@@ -481,9 +491,20 @@ function Dashboard() {
               your roster and questions.
             </div>
           </div>
-          <button className="cta danger" disabled={busy} onClick={resetGame}>
-            Reset
-          </button>
+          {confirmReset ? (
+            <span className="confirm-inline">
+              <button className="cta danger" disabled={busy} onClick={resetGame}>
+                Confirm reset
+              </button>
+              <button className="btn-sm" onClick={() => setConfirmReset(false)}>
+                Cancel
+              </button>
+            </span>
+          ) : (
+            <button className="cta danger" disabled={busy} onClick={() => setConfirmReset(true)}>
+              Reset
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -32,6 +32,7 @@ export default function RoundEditor({ round, onClose }: Props) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -136,10 +137,15 @@ export default function RoundEditor({ round, onClose }: Props) {
   }
 
   async function remove(q: ListItem) {
-    if (!confirm('Delete this question?')) return;
     setBusy(true);
-    await supabase.from('questions').delete().eq('id', q.id);
+    setErr(null);
+    const { error } = await supabase.from('questions').delete().eq('id', q.id);
     setBusy(false);
+    setConfirmDeleteId(null);
+    if (error) {
+      setErr(`Could not delete: ${error.message}`);
+      return;
+    }
     if (draft?.id === q.id) setDraft(null);
     await load();
   }
@@ -180,12 +186,29 @@ export default function RoundEditor({ round, onClose }: Props) {
                   </div>
                 </div>
                 <div className="q-item-actions">
-                  <button className="btn-sm" disabled={busy} onClick={() => startEdit(q)}>
-                    Edit
-                  </button>
-                  <button className="btn-sm warn" disabled={busy} onClick={() => remove(q)}>
-                    Delete
-                  </button>
+                  {confirmDeleteId === q.id ? (
+                    <>
+                      <button className="btn-sm warn" disabled={busy} onClick={() => remove(q)}>
+                        Confirm
+                      </button>
+                      <button className="btn-sm" onClick={() => setConfirmDeleteId(null)}>
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="btn-sm" disabled={busy} onClick={() => startEdit(q)}>
+                        Edit
+                      </button>
+                      <button
+                        className="btn-sm warn"
+                        disabled={busy}
+                        onClick={() => setConfirmDeleteId(q.id)}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
