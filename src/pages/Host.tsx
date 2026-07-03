@@ -2,6 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { LeaderboardRow, Quiz, QuizStatus } from '../lib/types';
 import ConfigBanner from '../components/ConfigBanner';
+import {
+  parseQuestionImport,
+  IMPORT_TEMPLATE,
+  type ParsedRound,
+} from '../lib/importQuestions';
 
 const PASSCODE = (import.meta.env.VITE_HOST_PASSCODE as string) || 'mole-master';
 const GATE_KEY = 'the-mole:host-unlocked';
@@ -71,16 +76,27 @@ function Gate({ onUnlock }: { onUnlock: () => void }) {
 function Dashboard() {
   const [rounds, setRounds] = useState<Quiz[]>([]);
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const [view, setView] = useState<View>('all');
   const [busy, setBusy] = useState(false);
 
+  // Question-upload panel state.
+  const [importText, setImportText] = useState('');
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+
   const refresh = useCallback(async () => {
-    const [{ data: qs }, { data: lb }] = await Promise.all([
+    const [{ data: qs }, { data: lb }, { data: pq }] = await Promise.all([
       supabase.from('quizzes').select('*').order('round_number'),
       supabase.from('leaderboard').select('*'),
+      supabase.from('public_questions').select('quiz_id'),
     ]);
     setRounds(qs ?? []);
     setRows((lb as LeaderboardRow[]) ?? []);
+    const c: Record<string, number> = {};
+    (pq ?? []).forEach((row) => {
+      c[row.quiz_id] = (c[row.quiz_id] ?? 0) + 1;
+    });
+    setCounts(c);
   }, []);
 
   useEffect(() => {
@@ -124,6 +140,84 @@ function Dashboard() {
     await supabase.from('players').update({ is_eliminated: false }).eq('id', playerId);
     await refresh();
     setBusy(false);
+  }
+
+  // Live-validate the pasted JSON so we can preview and gate the Import button.
+  const parsed = useMemo(
+    () => (importText.trim() ? parseQuestionImport(importText) : null),
+    [importText]
+  );
+  const canImport = !!parsed && parsed.errors.length === 0 && parsed.rounds.length > 0;
+
+  // Upsert each round and replace its questions. Rounds not present in the JSON
+  // are left untouched (so you can upload one round at a time if you like).
+  async function importContent(importRounds: ParsedRound[]) {
+    setBusy(true);
+    setImportMsg('Uploading…');
+    try {
+      for (const r of importRounds) {
+        const { data: quiz, error: qErr } = await supabase
+          .from('quizzes')
+          .upsert(
+            { round_number: r.round_number, title: r.title, subtitle: r.subtitle },
+            { onConflict: 'round_number' }
+          )
+          .select('id')
+          .single();
+        if (qErr || !quiz) {
+          throw new Error(qErr?.message ?? `Round ${r.round_number}: could not save round.`);
+        }
+        const { error: delErr } = await supabase
+          .from('questions')
+          .delete()
+          .eq('quiz_id', quiz.id);
+        if (delErr) throw new Error(`Round ${r.round_number}: ${delErr.message}`);
+
+        const payload = r.questions.map((q, i) => ({
+          quiz_id: quiz.id,
+          order_index: i,
+          prompt: q.prompt,
+          type: q.type,
+          options: q.options,
+          correct_index: q.correct_index,
+          points: q.points,
+          meta_id: q.meta_id,
+          meta_coord: q.meta_coord,
+        }));
+        const { error: insErr } = await supabase.from('questions').insert(payload);
+        if (insErr) throw new Error(`Round ${r.round_number}: ${insErr.message}`);
+      }
+      const totalQ = importRounds.reduce((n, r) => n + r.questions.length, 0);
+      setImportMsg(`✅ Uploaded ${importRounds.length} round(s) · ${totalQ} question(s).`);
+      setImportText('');
+      await refresh();
+    } catch (e) {
+      setImportMsg(`❌ ${(e as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Wipe game STATE (answers, eliminations, round status). Keeps roster + questions.
+  async function resetGame() {
+    if (
+      !confirm(
+        'Reset the game?\n\nThis clears ALL answers, brings every eliminated player back, and re-locks all four rounds.\n\nYour roster and questions are kept.'
+      )
+    )
+      return;
+    setBusy(true);
+    setImportMsg(null);
+    const IMPOSSIBLE = '00000000-0000-0000-0000-000000000000';
+    try {
+      await supabase.from('responses').delete().neq('id', IMPOSSIBLE);
+      await supabase.from('players').update({ is_eliminated: false }).neq('id', IMPOSSIBLE);
+      await supabase.from('quizzes').update({ status: 'locked' }).neq('id', IMPOSSIBLE);
+      setView('all');
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
   }
 
   // Build standings for the selected view, sorted worst → best.
@@ -174,7 +268,9 @@ function Dashboard() {
         <div className="rounds">
           {rounds.map((r) => (
             <div key={r.id} className={`round-card${r.status === 'open' ? ' active' : ''}`}>
-              <span className="round-num">ROUND {r.round_number}</span>
+              <span className="round-num">
+                ROUND {r.round_number} · {counts[r.id] ?? 0}Q
+              </span>
               <span className="round-title">{r.title}</span>
               <span className={`round-status ${r.status}`}>● {r.status}</span>
               <div className="round-actions">
@@ -288,6 +384,84 @@ function Dashboard() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Upload questions */}
+      <div>
+        <p className="section-label">Upload questions</p>
+        <p className="setup-hint">
+          Paste JSON for one or more rounds and hit Upload — it replaces that round's
+          questions. Rounds you don't include are left untouched.
+        </p>
+
+        <textarea
+          className="import-area"
+          spellCheck={false}
+          placeholder='{ "rounds": [ { "round": 1, "title": "BRIEFING", "questions": [ … ] } ] }'
+          value={importText}
+          onChange={(e) => {
+            setImportText(e.target.value);
+            setImportMsg(null);
+          }}
+        />
+
+        <div className="round-actions" style={{ flexWrap: 'wrap', marginTop: 12 }}>
+          <button
+            className="btn-sm"
+            style={{ flex: 'unset' }}
+            onClick={() => setImportText(IMPORT_TEMPLATE)}
+          >
+            Load template
+          </button>
+          <button
+            className="btn-sm"
+            style={{ flex: 'unset' }}
+            disabled={!canImport || busy}
+            onClick={() => parsed && importContent(parsed.rounds)}
+          >
+            Upload{parsed?.rounds.length ? ` ${parsed.rounds.length} round(s)` : ''}
+          </button>
+        </div>
+
+        {/* Live validation + preview */}
+        {parsed && parsed.errors.length > 0 && (
+          <div className="import-preview err-list">
+            {parsed.errors.slice(0, 10).map((e, i) => (
+              <div key={i}>• {e}</div>
+            ))}
+            {parsed.errors.length > 10 && <div>…and {parsed.errors.length - 10} more</div>}
+          </div>
+        )}
+        {parsed && parsed.errors.length === 0 && parsed.rounds.length > 0 && (
+          <div className="import-preview ok-list">
+            {parsed.rounds.map((r) => (
+              <div key={r.round_number}>
+                ✓ Round {r.round_number} — <strong>{r.title}</strong> · {r.questions.length}{' '}
+                question(s)
+              </div>
+            ))}
+          </div>
+        )}
+        {importMsg && <p className="import-msg">{importMsg}</p>}
+      </div>
+
+      {/* Danger zone */}
+      <div className="danger-zone">
+        <p className="section-label" style={{ color: 'var(--danger)' }}>
+          Danger zone
+        </p>
+        <div className="danger-row">
+          <div>
+            <div className="danger-title">Reset game</div>
+            <div className="setup-hint">
+              Clears all answers, un-eliminates everyone, and re-locks all rounds. Keeps
+              your roster and questions.
+            </div>
+          </div>
+          <button className="cta danger" disabled={busy} onClick={resetGame}>
+            Reset
+          </button>
         </div>
       </div>
     </div>

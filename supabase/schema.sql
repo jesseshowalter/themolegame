@@ -146,10 +146,12 @@ create policy quizzes_insert on public.quizzes for insert with check (true);
 -- still write. Players read via the public_questions view below.
 create policy questions_write on public.questions for all using (true) with check (true);
 
--- responses: players submit and revise their own answers; host reads all.
+-- responses: players submit and revise their own answers; host reads all and
+-- can clear them all via the "Reset game" host tool.
 create policy responses_read   on public.responses for select using (true);
 create policy responses_insert on public.responses for insert with check (true);
 create policy responses_update on public.responses for update using (true) with check (true);
+create policy responses_delete on public.responses for delete using (true);
 
 -- Column access: the anon role must NOT read questions directly, but MUST read
 -- the safe view and the leaderboard.

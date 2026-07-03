@@ -40,6 +40,8 @@ In the Supabase dashboard, open **SQL Editor → New query** and run, in order:
 1. Paste the contents of [`supabase/schema.sql`](supabase/schema.sql) → **Run**. This creates the tables, the grading trigger, the leaderboard view, security policies, and enables realtime.
 2. Paste the contents of [`supabase/seed.sql`](supabase/seed.sql) → **Run**. This loads a sample 12-person roster and all four rounds so you can test immediately. **Swap the names and questions for your own** later (see "Authoring your night" below).
 
+> **Already set up before the host tools existed?** Run [`supabase/host-tools.sql`](supabase/host-tools.sql) once. It adds the one policy the **Reset game** button needs (permission to clear answers). Fresh runs of `schema.sql` already include it.
+
 ### 3. Configure and run locally
 ```bash
 cp .env.example .env      # then edit .env
@@ -71,6 +73,7 @@ Open `http://localhost:5173/play` — you should see the roster instead of the
 4. When everyone's answered, hit **Close**. Look at the **Standings** table — it's sorted **worst score first**, and the elimination candidate is highlighted in red.
 5. Decide who's out and hit **Eliminate**. Their device shows *AGENT TERMINATED*; they're greyed out on your board (you can **Revive** if you change your mind).
 6. Repeat for Rounds 2–4. Use the **Cumulative / R1–R4** toggle to score a single round or the whole night.
+7. Ran a practice game? Scroll to **Danger zone → Reset** to wipe answers/eliminations and re-lock the rounds before the real thing.
 
 > Scoring reflects the classic Mole format: questions are about the Mole's real
 > identity/actions (which only you know). Whoever knows the Mole *least* scores
@@ -80,6 +83,41 @@ Open `http://localhost:5173/play` — you should see the roster instead of the
 
 ## Authoring your night
 
+### Upload questions from the host screen (easiest)
+In **`/host`**, scroll to **Upload questions**, click **Load template** to see the
+format, paste your own, and hit **Upload**. It validates live (green preview or
+red errors) and writes straight to the database. Uploading a round **replaces
+that round's** questions; rounds you leave out are untouched.
+
+The JSON format is forgiving:
+```jsonc
+{
+  "rounds": [
+    {
+      "round": 1,                       // or "round_number"
+      "title": "BRIEFING",
+      "subtitle": "Establish the field.",   // optional
+      "questions": [
+        {
+          "prompt": "WHO WAS SEEN EXITING THE COMPOUND?",
+          "type": "mc",                 // "mc" (default) or "tf"
+          "options": ["A", "B", "C", "D"],
+          "correct": 2,                  // 0-based index, or a letter like "C"
+          "meta_id": "MOLE-1-032",       // optional flavor line
+          "meta_coord": "52.37° N"       // optional flavor line
+        },
+        {
+          "prompt": "THE MOLE'S DIRECTIVE IS SABOTAGE.",
+          "type": "tf",                  // options default to TRUE / FALSE
+          "correct": true                // boolean ok for true/false
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Or edit the tables directly
 Everything is data — edit it in the Supabase **Table Editor** or by re-running a
 tweaked `seed.sql`.
 
@@ -91,6 +129,11 @@ tweaked `seed.sql`.
   - `correct_index`: the 0-based index of the right answer (guests never see this)
   - `meta_id` / `meta_coord`: optional flavor text under the question (e.g. `MOLE-X-032`)
 
+### Reset the game
+**`/host` → Danger zone → Reset** clears every answer, brings all eliminated
+players back, and re-locks all rounds — your roster and questions stay put.
+Perfect for wiping a practice run before the real night.
+
 ---
 
 ## Project structure
@@ -99,21 +142,25 @@ tweaked `seed.sql`.
 supabase/
   schema.sql        tables, grading trigger, leaderboard view, RLS, realtime
   seed.sql          sample roster + 4 rounds of questions
+  host-tools.sql    one-time add-on: delete policy for the Reset button
 src/
   lib/
-    supabase.ts      client (reads VITE_ env vars)
-    types.ts         DB types
-    session.ts       device-local "instant login" session
+    supabase.ts        client (reads VITE_ env vars)
+    types.ts           DB types
+    session.ts         device-local "instant login" session
+    importQuestions.ts parser/validator for the host question uploader
   components/        TerminalChrome, Wordmark, Chevron, ConfigBanner, useUptime
   pages/
     PlayLogin.tsx    roster grid + instant login effect
     WaitRoom.tsx     holding screen; realtime-routes into open rounds
     Quiz.tsx         the question screen (matches Figma)
     Done.tsx         post-round confirmation
-    Host.tsx         passcode gate + round controls + elimination leaderboard
+    Host.tsx         passcode gate, round controls, leaderboard, upload + reset
     Join.tsx         QR code portal
   index.css          design tokens (colors, fonts, scanlines)
   styles.css         screen + component styles
+scripts/
+  test-connection.mjs  local Supabase connection check (npm run test:db)
 ```
 
 ## Scripts

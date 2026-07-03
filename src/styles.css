@@ -468,6 +468,82 @@
 
 .table-scroll { width: 100%; overflow-x: auto; }
 
+/* Host setup: question upload + danger zone */
+.setup-hint {
+  font-size: 12px;
+  color: var(--white-60);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  max-width: 760px;
+}
+.import-area {
+  width: 100%;
+  min-height: 200px;
+  resize: vertical;
+  background: var(--panel);
+  border: 1px solid var(--accent-40);
+  border-radius: var(--radius);
+  color: var(--white);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 14px 16px;
+  tab-size: 2;
+}
+.import-area:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--glow-accent);
+}
+.import-preview {
+  margin-top: 12px;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.import-preview.ok-list {
+  border: 1px solid var(--accent-40);
+  background: var(--accent-08);
+  color: var(--white);
+}
+.import-preview.ok-list strong {
+  color: var(--accent);
+}
+.import-preview.err-list {
+  border: 1px solid var(--danger);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.import-msg {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--white);
+}
+.danger-zone {
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  background: rgba(255, 59, 48, 0.05);
+}
+.danger-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.danger-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+.danger-zone .cta.danger {
+  padding: 12px 32px;
+  font-size: 15px;
+}
+
 /* QR / join page */
 .qr-wrap {
   display: flex;
