@@ -336,3 +336,14 @@ revoke all on function public.admin_set_password(text, uuid, text) from public;
 revoke all on function public.verify_password(uuid, text)          from public;
 grant execute on function public.admin_set_password(text, uuid, text) to anon, authenticated;
 grant execute on function public.verify_password(uuid, text)          to anon, authenticated;
+
+create or replace function public.admin_get_password(p_passcode text, p_player uuid)
+returns text language plpgsql security definer set search_path = public as $$
+begin
+  if p_passcode is distinct from (select value from public.app_config where key='host_passcode') then
+    raise exception 'unauthorized';
+  end if;
+  return (select password from public.player_passwords where player_id = p_player);
+end; $$;
+revoke all on function public.admin_get_password(text, uuid) from public;
+grant execute on function public.admin_get_password(text, uuid) to anon, authenticated;

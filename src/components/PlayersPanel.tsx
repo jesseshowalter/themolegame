@@ -9,6 +9,7 @@ interface Props {
   moleId: string | null;
   onSetMole: (id: string | null) => void | Promise<void>;
   onSetPassword: (playerId: string, password: string) => void | Promise<void>;
+  onGetPassword: (playerId: string) => Promise<string>;
   onChanged: () => void | Promise<void>;
 }
 
@@ -18,6 +19,7 @@ export default function PlayersPanel({
   moleId,
   onSetMole,
   onSetPassword,
+  onGetPassword,
   onChanged,
 }: Props) {
   const [name, setName] = useState('');
@@ -29,6 +31,7 @@ export default function PlayersPanel({
   const [editCode, setEditCode] = useState('');
   const [editAvatar, setEditAvatar] = useState<string | null>(null);
   const [editPassword, setEditPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   async function addPlayer(e: React.FormEvent) {
@@ -47,13 +50,15 @@ export default function PlayersPanel({
     await onChanged();
   }
 
-  function startEdit(p: Player) {
+  async function startEdit(p: Player) {
     setEditId(p.id);
     setEditName(p.name);
     setEditCode(p.codename ?? '');
     setEditAvatar(p.avatar_url);
-    setEditPassword(''); // passwords are write-only; blank keeps the current one
+    setEditPassword(''); // blank keeps the current one
+    setCurrentPassword(null);
     setErr(null);
+    if (p.has_password) setCurrentPassword(await onGetPassword(p.id));
   }
 
   async function onPickAvatar(e: React.ChangeEvent<HTMLInputElement>) {
@@ -172,6 +177,12 @@ export default function PlayersPanel({
                   onChange={(e) => setEditCode(e.target.value)}
                   placeholder="Codename"
                 />
+                {p.has_password && (
+                  <p className="mono-dim current-password">
+                    Current password:{' '}
+                    <span className="password-value">{currentPassword ?? '…'}</span>
+                  </p>
+                )}
                 <div className="player-password">
                   <input
                     className="q-input"
@@ -180,7 +191,7 @@ export default function PlayersPanel({
                     onChange={(e) => setEditPassword(e.target.value)}
                     placeholder={
                       p.has_password
-                        ? 'Login password — set. Type to change'
+                        ? 'New password (blank keeps current)'
                         : 'Login password (optional)'
                     }
                   />

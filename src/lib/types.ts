@@ -139,6 +139,7 @@ export type Database = {
         Args: { p_passcode: string; p_player: string; p_password: string };
         Returns: undefined;
       };
+      admin_get_password: { Args: { p_passcode: string; p_player: string }; Returns: string | null };
       verify_password: { Args: { p_player: string; p_password: string }; Returns: boolean };
     };
     Enums: Record<string, never>;

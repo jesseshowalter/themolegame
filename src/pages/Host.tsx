@@ -209,6 +209,15 @@ function Dashboard() {
     setBusy(false);
   }
 
+  // Read a player's current password (host-only, passcode-gated) for the editor.
+  async function getPassword(playerId: string): Promise<string> {
+    const { data } = await supabase.rpc('admin_get_password', {
+      p_passcode: PASSCODE,
+      p_player: playerId,
+    });
+    return typeof data === 'string' ? data : '';
+  }
+
   // Live-validate the pasted JSON so we can preview and gate the Import button.
   const parsed = useMemo(
     () => (importText.trim() ? parseQuestionImport(importText) : null),
@@ -631,6 +640,7 @@ function Dashboard() {
           moleId={moleId}
           onSetMole={setMole}
           onSetPassword={setPassword}
+          onGetPassword={getPassword}
           onChanged={refresh}
         />
       )}
