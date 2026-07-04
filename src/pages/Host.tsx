@@ -104,6 +104,12 @@ function Dashboard() {
   const [importText, setImportText] = useState('');
   const [importMsg, setImportMsg] = useState<string | null>(null);
 
+  // Lock the dashboard back behind the passcode gate on this device.
+  function logout() {
+    sessionStorage.removeItem(GATE_KEY);
+    window.location.reload();
+  }
+
   const refresh = useCallback(async () => {
     const [{ data: qs }, { data: lb }, { data: pq }, { data: pl }, mole] = await Promise.all([
       supabase.from('quizzes').select('*').order('round_number'),
@@ -527,11 +533,6 @@ function Dashboard() {
       {/* Leaderboard / elimination */}
       {tab === 'standings' && (
       <div>
-        <p className="section-label">
-          Standings — {view === 'all' ? 'cumulative' : `round ${view}`} · tap a header to sort
-          {' · '}lowest score flagged
-        </p>
-
         <div className="round-actions" style={{ marginBottom: 16, flexWrap: 'wrap' }}>
           <button
             className="btn-sm"
@@ -775,6 +776,22 @@ function Dashboard() {
         )}
         {importMsg && <p className="import-msg">{importMsg}</p>}
       </details>
+
+      {/* Host session */}
+      <div className="danger-zone">
+        <p className="section-label">Host session</p>
+        <div className="danger-row">
+          <div>
+            <div className="danger-title">Log out</div>
+            <div className="setup-hint">
+              Locks the host dashboard on this device. You'll need the passcode to get back in.
+            </div>
+          </div>
+          <button className="btn-sm" style={{ flex: 'unset' }} onClick={logout}>
+            Log out
+          </button>
+        </div>
+      </div>
 
       {/* Danger zone */}
       <div className="danger-zone">
