@@ -25,7 +25,9 @@ export type Quiz = {
   round_number: number;
   title: string;
   subtitle: string | null;
-  status: QuizStatus;
+  status: QuizStatus; // the quiz phase
+  mission_status: QuizStatus; // the mission/challenge phase
+  mission_briefing: string; // public briefing shown when the mission is open
   created_at: string;
 };
 

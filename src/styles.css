@@ -324,6 +324,10 @@
   line-height: 1.5;
   max-width: 560px;
 }
+.mission-title {
+  color: var(--accent);
+  text-shadow: var(--text-glow);
+}
 .mole-tasks {
   list-style: none;
   width: 100%;
@@ -545,6 +549,30 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px;
+}
+
+/* Rounds as rows: mission card + quiz card side by side */
+.round-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.round-row-label {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.round-row-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 720px) {
+  .round-row-cards {
+    grid-template-columns: 1fr;
+  }
 }
 .round-card {
   border: 1px solid var(--accent-40);

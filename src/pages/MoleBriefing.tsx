@@ -41,10 +41,10 @@ export default function MoleBriefing() {
       }
       const { data: q } = await supabase
         .from('quizzes')
-        .select('title,status')
+        .select('title,mission_status')
         .eq('id', quizId)
         .maybeSingle();
-      if (!q || q.status !== 'open') {
+      if (!q || q.mission_status !== 'open') {
         navigate('/play/wait', { replace: true });
         return;
       }
@@ -66,7 +66,7 @@ export default function MoleBriefing() {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'quizzes', filter: `id=eq.${quizId}` },
         (payload) => {
-          if ((payload.new as { status: string }).status !== 'open')
+          if ((payload.new as { mission_status: string }).mission_status !== 'open')
             navigate('/play/wait', { replace: true });
         }
       )

@@ -3,6 +3,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { LeaderboardRow, Player, Quiz, QuizStatus } from '../lib/types';
 import ConfigBanner from '../components/ConfigBanner';
 import RoundEditor from '../components/RoundEditor';
+import MissionEditor from '../components/MissionEditor';
 import PlayersPanel from '../components/PlayersPanel';
 import {
   parseQuestionImport,
@@ -85,6 +86,7 @@ function Dashboard() {
   const [view, setView] = useState<View>('all');
   const [busy, setBusy] = useState(false);
   const [editingRoundId, setEditingRoundId] = useState<string | null>(null);
+  const [editingMissionId, setEditingMissionId] = useState<string | null>(null);
   const [confirmEliminateId, setConfirmEliminateId] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [sort, setSort] = useState<{
@@ -129,16 +131,35 @@ function Dashboard() {
     };
   }, [refresh]);
 
+  // Close every open mission and quiz across all rounds — only one phase is
+  // ever live at a time (a mission or a quiz).
+  async function closeAllLive() {
+    await Promise.all(
+      rounds.flatMap((r) => {
+        const ops = [];
+        if (r.status === 'open')
+          ops.push(supabase.from('quizzes').update({ status: 'closed' }).eq('id', r.id));
+        if (r.mission_status === 'open')
+          ops.push(
+            supabase.from('quizzes').update({ mission_status: 'closed' }).eq('id', r.id)
+          );
+        return ops;
+      })
+    );
+  }
+
   async function setRoundStatus(round: Quiz, status: QuizStatus) {
     setBusy(true);
-    // Only one round should be live at a time — close any other open round.
-    if (status === 'open') {
-      const others = rounds.filter((r) => r.id !== round.id && r.status === 'open');
-      await Promise.all(
-        others.map((o) => supabase.from('quizzes').update({ status: 'closed' }).eq('id', o.id))
-      );
-    }
+    if (status === 'open') await closeAllLive();
     await supabase.from('quizzes').update({ status }).eq('id', round.id);
+    await refresh();
+    setBusy(false);
+  }
+
+  async function setMissionStatus(round: Quiz, status: QuizStatus) {
+    setBusy(true);
+    if (status === 'open') await closeAllLive();
+    await supabase.from('quizzes').update({ mission_status: status }).eq('id', round.id);
     await refresh();
     setBusy(false);
   }
@@ -313,6 +334,20 @@ function Dashboard() {
     );
   }
 
+  // Full-screen mission briefing editor.
+  const editingMission = rounds.find((r) => r.id === editingMissionId);
+  if (editingMission) {
+    return (
+      <MissionEditor
+        round={editingMission}
+        onClose={() => {
+          setEditingMissionId(null);
+          refresh();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="host">
       <div className="host-head">
@@ -349,44 +384,84 @@ function Dashboard() {
         </button>
       </div>
 
-      {/* Round controls */}
+      {/* Round controls — each round is a Mission card + a Quiz card */}
       {tab === 'rounds' && (
       <div>
-        <p className="section-label">Rounds</p>
-        <div className="rounds">
-          {rounds.map((r) => (
-            <div key={r.id} className={`round-card${r.status === 'open' ? ' active' : ''}`}>
-              <div className="round-card-top">
-                <span className="round-num">
-                  ROUND {r.round_number} · {counts[r.id] ?? 0}Q
-                </span>
-                <button className="round-edit" onClick={() => setEditingRoundId(r.id)}>
-                  QUESTIONS ›
-                </button>
+        <p className="section-label">Rounds — send the mission, then open the quiz</p>
+        <div className="round-rows">
+          {rounds.map((r) => {
+            const missionStatus = r.mission_status ?? 'locked';
+            return (
+              <div className="round-row" key={r.id}>
+                <p className="round-row-label">
+                  ROUND {r.round_number} · {r.title}
+                </p>
+                <div className="round-row-cards">
+                  {/* MISSION */}
+                  <div className={`round-card${missionStatus === 'open' ? ' active' : ''}`}>
+                    <div className="round-card-top">
+                      <span className="round-num">MISSION</span>
+                      <button className="round-edit" onClick={() => setEditingMissionId(r.id)}>
+                        BRIEFING ›
+                      </button>
+                    </div>
+                    <span className="round-title">Mission briefing</span>
+                    <span className={`round-status ${missionStatus}`}>● {missionStatus}</span>
+                    <div className="round-actions">
+                      {missionStatus !== 'open' ? (
+                        <button
+                          className="btn-sm"
+                          disabled={busy}
+                          onClick={() => setMissionStatus(r, 'open')}
+                        >
+                          Send
+                        </button>
+                      ) : (
+                        <button
+                          className="btn-sm warn"
+                          disabled={busy}
+                          onClick={() => setMissionStatus(r, 'closed')}
+                        >
+                          Close
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* QUIZ */}
+                  <div className={`round-card${r.status === 'open' ? ' active' : ''}`}>
+                    <div className="round-card-top">
+                      <span className="round-num">QUIZ · {counts[r.id] ?? 0}Q</span>
+                      <button className="round-edit" onClick={() => setEditingRoundId(r.id)}>
+                        QUESTIONS ›
+                      </button>
+                    </div>
+                    <span className="round-title">Quiz</span>
+                    <span className={`round-status ${r.status}`}>● {r.status}</span>
+                    <div className="round-actions">
+                      {r.status !== 'open' ? (
+                        <button
+                          className="btn-sm"
+                          disabled={busy}
+                          onClick={() => setRoundStatus(r, 'open')}
+                        >
+                          Open
+                        </button>
+                      ) : (
+                        <button
+                          className="btn-sm warn"
+                          disabled={busy}
+                          onClick={() => setRoundStatus(r, 'closed')}
+                        >
+                          Close
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <span className="round-title">{r.title}</span>
-              <span className={`round-status ${r.status}`}>● {r.status}</span>
-              <div className="round-actions">
-                {r.status !== 'open' ? (
-                  <button
-                    className="btn-sm"
-                    disabled={busy}
-                    onClick={() => setRoundStatus(r, 'open')}
-                  >
-                    Open
-                  </button>
-                ) : (
-                  <button
-                    className="btn-sm warn"
-                    disabled={busy}
-                    onClick={() => setRoundStatus(r, 'closed')}
-                  >
-                    Close
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
       )}

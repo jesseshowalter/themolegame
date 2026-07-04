@@ -36,46 +36,54 @@ export default function WaitRoom() {
       return;
     }
 
-    const { data: open } = await supabase
+    const { data: allRounds } = await supabase
       .from('quizzes')
       .select('*')
-      .eq('status', 'open')
-      .order('round_number')
-      .limit(1)
-      .maybeSingle();
-
-    if (!open) {
-      setCompletedRound(null);
-      setChecking(false);
-      return;
-    }
-
-    // The mole never takes the quiz — route them to their round briefing.
+      .order('round_number');
+    const rounds = allRounds ?? [];
+    const openMission = rounds.find((q) => q.mission_status === 'open');
+    const openQuiz = rounds.find((q) => q.status === 'open');
     const { data: isMole } = await supabase.rpc('mole_check', { p_player: session.id });
-    if (isMole) {
-      navigate(`/play/mole/${open.id}`, { replace: true });
+
+    // Mission phase: mole gets their secret objectives, everyone else the brief.
+    if (openMission) {
+      navigate(
+        isMole ? `/play/mole/${openMission.id}` : `/play/mission/${openMission.id}`,
+        { replace: true }
+      );
       return;
     }
 
-    // Has this player already answered every question in the open round?
-    const [{ count: qCount }, { count: rCount }] = await Promise.all([
-      supabase
-        .from('public_questions')
-        .select('id', { count: 'exact', head: true })
-        .eq('quiz_id', open.id),
-      supabase
-        .from('responses')
-        .select('id', { count: 'exact', head: true })
-        .eq('quiz_id', open.id)
-        .eq('player_id', session.id),
-    ]);
-
-    if ((qCount ?? 0) > 0 && (rCount ?? 0) >= (qCount ?? 0)) {
-      setCompletedRound(open); // finished — hold until next round
-      setChecking(false);
-    } else {
-      navigate(`/play/quiz/${open.id}`, { replace: true });
+    // Quiz phase: the mole doesn't take the quiz, so they just stand by.
+    if (openQuiz) {
+      if (isMole) {
+        setCompletedRound(null);
+        setChecking(false);
+        return;
+      }
+      const [{ count: qCount }, { count: rCount }] = await Promise.all([
+        supabase
+          .from('public_questions')
+          .select('id', { count: 'exact', head: true })
+          .eq('quiz_id', openQuiz.id),
+        supabase
+          .from('responses')
+          .select('id', { count: 'exact', head: true })
+          .eq('quiz_id', openQuiz.id)
+          .eq('player_id', session.id),
+      ]);
+      if ((qCount ?? 0) > 0 && (rCount ?? 0) >= (qCount ?? 0)) {
+        setCompletedRound(openQuiz); // finished — hold until next round
+        setChecking(false);
+      } else {
+        navigate(`/play/quiz/${openQuiz.id}`, { replace: true });
+      }
+      return;
     }
+
+    // Nothing live.
+    setCompletedRound(null);
+    setChecking(false);
   }, [navigate, session]);
 
   useEffect(() => {

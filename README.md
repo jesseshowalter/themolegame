@@ -67,10 +67,19 @@ Open `http://localhost:5173/play` — you should see the roster instead of the
 
 ## Running the night
 
-The **`/host`** screen is organized into four tabs: **Rounds** (open/close each
-round), **Standings** (live scores + eliminate), **Players** (manage the roster —
-add, rename, upload an avatar, designate the mole, remove), and **Advanced** (bulk
-JSON import + reset game). Avatars are uploaded in the player **Edit** flow (resized and stored inline
+The **`/host`** screen is organized into four tabs: **Rounds**, **Standings**
+(live scores + eliminate), **Players** (manage the roster — add, rename, upload an
+avatar, designate the mole, remove), and **Advanced** (bulk JSON import + reset
+game).
+
+Each round has **two phases**, shown as a row of two cards in the **Rounds** tab:
+- **Mission** (left) — the physical challenge. **BRIEFING ›** edits the public
+  briefing; **Send** shows it to every player (the mole sees their secret
+  objectives instead). Close it when the challenge is done.
+- **Quiz** (right) — **QUESTIONS ›** edits questions; **Open** starts the quiz.
+
+Only one phase is live at a time — sending a mission or opening a quiz closes
+whatever else was open. Avatars are uploaded in the player **Edit** flow (resized and stored inline
 — no external storage needed) and show on the login roster.
 
 1. On your laptop, open **`/join`** and project/show it — or open **`/host`** to drive the game.

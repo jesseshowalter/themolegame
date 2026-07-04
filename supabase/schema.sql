@@ -30,15 +30,19 @@ create table public.players (
   created_at    timestamptz not null default now()
 );
 
--- The four rounds of the night.
+-- The four rounds of the night. Each round has two phases: a mission (the
+-- physical challenge, with a public briefing) and the quiz.
 create table public.quizzes (
-  id            uuid primary key default gen_random_uuid(),
-  round_number  int not null unique,
-  title         text not null,
-  subtitle      text,
-  status        text not null default 'locked'
-                  check (status in ('locked', 'open', 'closed')),
-  created_at    timestamptz not null default now()
+  id             uuid primary key default gen_random_uuid(),
+  round_number   int not null unique,
+  title          text not null,
+  subtitle       text,
+  status         text not null default 'locked'
+                   check (status in ('locked', 'open', 'closed')),
+  mission_status text not null default 'locked'
+                   check (mission_status in ('locked', 'open', 'closed')),
+  mission_briefing text not null default '',   -- public challenge briefing
+  created_at     timestamptz not null default now()
 );
 
 -- Questions belong to a round. correct_index is the answer key (kept private).
