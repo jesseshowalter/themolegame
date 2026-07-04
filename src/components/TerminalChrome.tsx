@@ -4,9 +4,10 @@ import { codenameFor } from '../lib/session';
 
 interface Props {
   children: ReactNode;
-  /** Codename shown in the bottom-left dossier, e.g. from the session. */
+  /** Player name shown in the bottom-left dossier, e.g. from the session. */
   agentName?: string | null;
-  agentRank?: string;
+  /** Player's avatar (data URL) shown in the dossier; falls back to a monogram. */
+  avatarUrl?: string | null;
   /** Overrides the top-left status readout. */
   status?: string;
   signal?: string;
@@ -14,13 +15,13 @@ interface Props {
 
 /**
  * Full-screen spy-terminal frame: peripheral readouts (top-left), agent dossier
- * (bottom-left), and the page content centered. Scanlines + vignette come from
- * global CSS in index.css.
+ * (bottom-left, confirming who's logged in), and the page content centered.
+ * Scanlines + vignette come from global CSS in index.css.
  */
 export default function TerminalChrome({
   children,
   agentName,
-  agentRank = 'FIELD INVESTIGATOR',
+  avatarUrl,
   status = 'SYSTEM ARMED',
   signal = 'ENCRYPTED',
 }: Props) {
@@ -37,14 +38,18 @@ export default function TerminalChrome({
 
       <div className="screen-content">{children}</div>
 
-      {codename && (
+      {agentName && (
         <div className="user-dossier">
           <div className="dossier-avatar">
-            <span>{codename.replace(/^AGENT_/, '').split('_')[0]?.[0] ?? '?'}</span>
+            {avatarUrl ? (
+              <img className="avatar-img" src={avatarUrl} alt="" />
+            ) : (
+              <span>{agentName.trim()[0]?.toUpperCase() ?? '?'}</span>
+            )}
           </div>
           <div className="dossier-text">
-            <p className="dossier-name">{codename}</p>
-            <p className="dossier-rank">RANK: {agentRank}</p>
+            <p className="dossier-name">{agentName}</p>
+            <p className="dossier-rank">{codename}</p>
           </div>
         </div>
       )}

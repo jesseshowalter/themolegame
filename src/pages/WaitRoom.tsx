@@ -91,7 +91,11 @@ export default function WaitRoom() {
   if (!session && isSupabaseConfigured) return null;
 
   return (
-    <TerminalChrome agentName={session?.name} status={eliminated ? 'TERMINATED' : 'STANDBY'}>
+    <TerminalChrome
+      agentName={session?.name}
+      avatarUrl={session?.avatar}
+      status={eliminated ? 'TERMINATED' : 'STANDBY'}
+    >
       <div className="header">
         <Wordmark size={52} />
       </div>

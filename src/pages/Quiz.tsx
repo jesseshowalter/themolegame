@@ -122,7 +122,7 @@ export default function Quiz() {
 
   if (loading || !current) {
     return (
-      <TerminalChrome agentName={session?.name} status="DECRYPTING">
+      <TerminalChrome agentName={session?.name} avatarUrl={session?.avatar} status="DECRYPTING">
         <Wordmark size={52} />
         <p className="status-sub cursor">DECRYPTING DIRECTIVE</p>
       </TerminalChrome>
@@ -133,7 +133,7 @@ export default function Quiz() {
   const isSingleColumn = current.type === 'tf';
 
   return (
-    <TerminalChrome agentName={session?.name} status="TRANSMITTING">
+    <TerminalChrome agentName={session?.name} avatarUrl={session?.avatar} status="TRANSMITTING">
       <div className="header">
         <Wordmark size={52} />
         <div className="progress">

@@ -11,10 +11,18 @@ export interface Session {
   id: string;
   name: string;
   codename: string | null;
+  avatar: string | null;
 }
 
-export function saveSession(player: Pick<Player, 'id' | 'name' | 'codename'>): Session {
-  const session: Session = { id: player.id, name: player.name, codename: player.codename };
+export function saveSession(
+  player: Pick<Player, 'id' | 'name' | 'codename' | 'avatar_url'>
+): Session {
+  const session: Session = {
+    id: player.id,
+    name: player.name,
+    codename: player.codename,
+    avatar: player.avatar_url ?? null,
+  };
   localStorage.setItem(KEY, JSON.stringify(session));
   return session;
 }

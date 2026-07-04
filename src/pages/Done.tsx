@@ -42,7 +42,7 @@ export default function Done() {
   if (!session && isSupabaseConfigured) return null;
 
   return (
-    <TerminalChrome agentName={session?.name} status="TRANSMITTED">
+    <TerminalChrome agentName={session?.name} avatarUrl={session?.avatar} status="TRANSMITTED">
       <Wordmark size={52} />
       <div className="status-center">
         <p className="mono-label">// RESPONSES ENCRYPTED &amp; SENT</p>
