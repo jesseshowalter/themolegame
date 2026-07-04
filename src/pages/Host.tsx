@@ -197,6 +197,18 @@ function Dashboard() {
     setBusy(false);
   }
 
+  // Set (or clear, with '') a player's login password.
+  async function setPassword(playerId: string, password: string) {
+    setBusy(true);
+    await supabase.rpc('admin_set_password', {
+      p_passcode: PASSCODE,
+      p_player: playerId,
+      p_password: password,
+    });
+    await refresh();
+    setBusy(false);
+  }
+
   // Live-validate the pasted JSON so we can preview and gate the Import button.
   const parsed = useMemo(
     () => (importText.trim() ? parseQuestionImport(importText) : null),
@@ -618,6 +630,7 @@ function Dashboard() {
           players={players}
           moleId={moleId}
           onSetMole={setMole}
+          onSetPassword={setPassword}
           onChanged={refresh}
         />
       )}

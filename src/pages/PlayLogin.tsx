@@ -12,6 +12,10 @@ export default function PlayLogin() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [authing, setAuthing] = useState<string | null>(null); // codename flashing in
+  const [pinFor, setPinFor] = useState<Player | null>(null); // account awaiting a password
+  const [pinValue, setPinValue] = useState('');
+  const [pinError, setPinError] = useState(false);
+  const [pinBusy, setPinBusy] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -41,6 +45,70 @@ export default function PlayLogin() {
     }
     // Brief "ACCESS GRANTED" beat, then into the field.
     setTimeout(() => navigate('/play/wait'), 900);
+  }
+
+  function onTap(p: Player) {
+    if (p.is_eliminated) return;
+    if (p.has_password) {
+      setPinFor(p);
+      setPinValue('');
+      setPinError(false);
+    } else {
+      login(p);
+    }
+  }
+
+  async function submitPin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pinFor) return;
+    setPinBusy(true);
+    setPinError(false);
+    const { data: ok } = await supabase.rpc('verify_password', {
+      p_player: pinFor.id,
+      p_password: pinValue,
+    });
+    setPinBusy(false);
+    if (ok) {
+      const p = pinFor;
+      setPinFor(null);
+      login(p);
+    } else {
+      setPinError(true);
+    }
+  }
+
+  if (pinFor) {
+    return (
+      <TerminalChrome status="LOCKED" signal="SECURED">
+        <Wordmark size={52} />
+        <form className="gate" onSubmit={submitPin}>
+          <p className="mono-label">// IDENTITY: {codenameFor(pinFor.name, pinFor.codename)}</p>
+          <p className="roster-intro">Enter your password, {pinFor.name.split(' ')[0]}</p>
+          <input
+            type="password"
+            placeholder="PASSWORD"
+            value={pinValue}
+            autoFocus
+            onChange={(e) => {
+              setPinValue(e.target.value);
+              setPinError(false);
+            }}
+          />
+          <button className="cta" type="submit" disabled={pinBusy}>
+            Authenticate
+          </button>
+          {pinError && <p className="err">ACCESS DENIED</p>}
+          <button
+            type="button"
+            className="btn-sm"
+            style={{ flex: 'unset' }}
+            onClick={() => setPinFor(null)}
+          >
+            ← Back to roster
+          </button>
+        </form>
+      </TerminalChrome>
+    );
   }
 
   if (authing) {
@@ -81,7 +149,7 @@ export default function PlayLogin() {
               key={p.id}
               className="roster-card"
               disabled={p.is_eliminated}
-              onClick={() => login(p)}
+              onClick={() => onTap(p)}
             >
               <div className="roster-avatar">
                 {p.avatar_url ? (

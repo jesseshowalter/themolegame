@@ -8,11 +8,18 @@ interface Props {
   players: Player[];
   moleId: string | null;
   onSetMole: (id: string | null) => void | Promise<void>;
+  onSetPassword: (playerId: string, password: string) => void | Promise<void>;
   onChanged: () => void | Promise<void>;
 }
 
-/** Roster management: add, rename, remove agents, and designate the mole. */
-export default function PlayersPanel({ players, moleId, onSetMole, onChanged }: Props) {
+/** Roster management: add, rename, remove agents, set the mole, set passwords. */
+export default function PlayersPanel({
+  players,
+  moleId,
+  onSetMole,
+  onSetPassword,
+  onChanged,
+}: Props) {
   const [name, setName] = useState('');
   const [codename, setCodename] = useState('');
   const [busy, setBusy] = useState(false);
@@ -21,6 +28,7 @@ export default function PlayersPanel({ players, moleId, onSetMole, onChanged }: 
   const [editName, setEditName] = useState('');
   const [editCode, setEditCode] = useState('');
   const [editAvatar, setEditAvatar] = useState<string | null>(null);
+  const [editPassword, setEditPassword] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   async function addPlayer(e: React.FormEvent) {
@@ -44,6 +52,7 @@ export default function PlayersPanel({ players, moleId, onSetMole, onChanged }: 
     setEditName(p.name);
     setEditCode(p.codename ?? '');
     setEditAvatar(p.avatar_url);
+    setEditPassword(''); // passwords are write-only; blank keeps the current one
     setErr(null);
   }
 
@@ -69,8 +78,12 @@ export default function PlayersPanel({ players, moleId, onSetMole, onChanged }: 
       .from('players')
       .update({ name: n, codename: editCode.trim() || null, avatar_url: editAvatar })
       .eq('id', editId);
+    if (error) {
+      setBusy(false);
+      return setErr(error.message);
+    }
+    if (editPassword.trim()) await onSetPassword(editId, editPassword.trim());
     setBusy(false);
-    if (error) return setErr(error.message);
     setEditId(null);
     await onChanged();
   }
@@ -159,6 +172,32 @@ export default function PlayersPanel({ players, moleId, onSetMole, onChanged }: 
                   onChange={(e) => setEditCode(e.target.value)}
                   placeholder="Codename"
                 />
+                <div className="player-password">
+                  <input
+                    className="q-input"
+                    type="text"
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
+                    placeholder={
+                      p.has_password
+                        ? 'Login password — set. Type to change'
+                        : 'Login password (optional)'
+                    }
+                  />
+                  {p.has_password && (
+                    <button
+                      className="btn-sm warn"
+                      style={{ flex: 'unset' }}
+                      disabled={busy}
+                      onClick={async () => {
+                        await onSetPassword(p.id, '');
+                        setEditPassword('');
+                      }}
+                    >
+                      Remove password
+                    </button>
+                  )}
+                </div>
                 <div className="player-edit-actions">
                   <button
                     className={`btn-sm${moleId === p.id ? ' on' : ''}`}
@@ -191,6 +230,7 @@ export default function PlayersPanel({ players, moleId, onSetMole, onChanged }: 
                 <div>
                   <div className="player-name">
                     {p.name}
+                    {p.has_password && <span title="Password set"> 🔒</span>}
                     {moleId === p.id && <span className="tag-mole"> · MOLE</span>}
                     {p.is_eliminated && <span className="tag-elim"> · ELIMINATED</span>}
                   </div>

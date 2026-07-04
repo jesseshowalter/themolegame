@@ -16,6 +16,7 @@ export type Player = {
   codename: string | null;
   avatar_url: string | null;
   is_eliminated: boolean;
+  has_password: boolean;
   joined_at: string | null;
   created_at: string;
 };
@@ -133,6 +134,12 @@ export type Database = {
       };
       mole_check: { Args: { p_player: string }; Returns: boolean };
       mole_briefing: { Args: { p_player: string; p_quiz: string }; Returns: string | null };
+      // Per-player login passwords.
+      admin_set_password: {
+        Args: { p_passcode: string; p_player: string; p_password: string };
+        Returns: undefined;
+      };
+      verify_password: { Args: { p_player: string; p_password: string }; Returns: boolean };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

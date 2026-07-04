@@ -517,6 +517,17 @@
   flex: 1;
   min-width: 140px;
 }
+.player-password {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+}
+.player-password .q-input {
+  flex: 1;
+  min-width: 160px;
+}
 .player-edit-actions {
   display: flex;
   gap: 8px;

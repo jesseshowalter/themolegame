@@ -69,8 +69,8 @@ Open `http://localhost:5173/play` — you should see the roster instead of the
 
 The **`/host`** screen is organized into four tabs: **Rounds**, **Standings**
 (live scores + eliminate), **Players** (manage the roster — add, rename, upload an
-avatar, designate the mole, remove), and **Advanced** (bulk JSON import + reset
-game).
+avatar, designate the mole, set a login password, remove), and **Advanced** (bulk
+JSON import + reset game).
 
 Each round has **two phases**, shown as a row of two cards in the **Rounds** tab:
 - **Mission** (left) — the physical challenge. **BRIEFING ›** edits the public
@@ -164,6 +164,14 @@ tweaked `seed.sql`.
 **`/host` → Danger zone → Reset** clears every answer, brings all eliminated
 players back, and re-locks all rounds — your roster and questions stay put.
 Perfect for wiping a practice run before the real night.
+
+### Player passwords
+To stop guests from tapping into each other's accounts (especially the mole's),
+give players a login password: **Players tab → Edit → Login password**. The play
+screen then asks for it when someone taps that account. Passwords are stored in
+an RLS-locked table (guests can't read them; only a public "has password" flag is
+exposed) and checked server-side. Hand them out on physical notes. Leave blank
+for no password. Requires [`supabase/passwords.sql`](supabase/passwords.sql) once.
 
 ### The Mole
 Pick one player to secretly play the saboteur:

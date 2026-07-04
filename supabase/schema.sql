@@ -26,6 +26,7 @@ create table public.players (
   codename      text,                       -- e.g. AGENT_J_SMITH (optional)
   avatar_url    text,
   is_eliminated boolean not null default false,
+  has_password  boolean not null default false,  -- login gated by a password?
   joined_at     timestamptz,                -- set the first time they tap in
   created_at    timestamptz not null default now()
 );
@@ -295,3 +296,43 @@ grant execute on function public.admin_get_mole_briefing(text, uuid)       to an
 grant execute on function public.admin_set_mole_briefing(text, uuid, text) to anon, authenticated;
 grant execute on function public.mole_check(uuid)                          to anon, authenticated;
 grant execute on function public.mole_briefing(uuid, uuid)                 to anon, authenticated;
+
+-- ============================================================================
+-- Per-player login passwords (RLS-locked value + public has_password flag).
+-- ============================================================================
+create table if not exists public.player_passwords (
+  player_id uuid primary key references public.players(id) on delete cascade,
+  password  text not null
+);
+alter table public.player_passwords enable row level security;
+revoke all on public.player_passwords from anon, authenticated;
+
+create or replace function public.admin_set_password(p_passcode text, p_player uuid, p_password text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if p_passcode is distinct from (select value from public.app_config where key='host_passcode') then
+    raise exception 'unauthorized';
+  end if;
+  if p_password is null or length(trim(p_password)) = 0 then
+    delete from public.player_passwords where player_id = p_player;
+    update public.players set has_password = false where id = p_player;
+  else
+    insert into public.player_passwords (player_id, password) values (p_player, trim(p_password))
+      on conflict (player_id) do update set password = excluded.password;
+    update public.players set has_password = true where id = p_player;
+  end if;
+end; $$;
+
+create or replace function public.verify_password(p_player uuid, p_password text)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare stored text;
+begin
+  select password into stored from public.player_passwords where player_id = p_player;
+  if stored is null then return true; end if;
+  return trim(coalesce(p_password, '')) = stored;
+end; $$;
+
+revoke all on function public.admin_set_password(text, uuid, text) from public;
+revoke all on function public.verify_password(uuid, text)          from public;
+grant execute on function public.admin_set_password(text, uuid, text) to anon, authenticated;
+grant execute on function public.verify_password(uuid, text)          to anon, authenticated;
