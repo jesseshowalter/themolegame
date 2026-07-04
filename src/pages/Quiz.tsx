@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { getSession } from '../lib/session';
+import { useEliminated } from '../lib/useEliminated';
 import type { Question, Quiz as QuizRow } from '../lib/types';
 import TerminalChrome from '../components/TerminalChrome';
 import Wordmark from '../components/Wordmark';
 import Chevron from '../components/Chevron';
+import EliminatedBanner from '../components/EliminatedBanner';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
@@ -13,6 +15,7 @@ export default function Quiz() {
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
   const session = getSession();
+  const eliminated = useEliminated(session?.id);
 
   const [quiz, setQuiz] = useState<QuizRow | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -134,6 +137,7 @@ export default function Quiz() {
 
   return (
     <TerminalChrome agentName={session?.name} avatarUrl={session?.avatar} status="TRANSMITTING">
+      {eliminated && <EliminatedBanner />}
       <div className="header">
         <Wordmark size={52} />
         <div className="progress">

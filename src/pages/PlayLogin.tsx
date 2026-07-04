@@ -33,7 +33,6 @@ export default function PlayLogin() {
   }, []);
 
   async function login(p: Player) {
-    if (p.is_eliminated) return;
     setAuthing(codenameFor(p.name, p.codename));
     saveSession(p);
     // Stamp first join time (best-effort).
@@ -48,7 +47,6 @@ export default function PlayLogin() {
   }
 
   function onTap(p: Player) {
-    if (p.is_eliminated) return;
     if (p.has_password) {
       setPinFor(p);
       setPinValue('');
@@ -147,8 +145,7 @@ export default function PlayLogin() {
           return (
             <button
               key={p.id}
-              className="roster-card"
-              disabled={p.is_eliminated}
+              className={`roster-card${p.is_eliminated ? ' eliminated' : ''}`}
               onClick={() => onTap(p)}
             >
               <div className="roster-avatar">
@@ -161,7 +158,8 @@ export default function PlayLogin() {
               <div>
                 <div className="roster-name">{p.name}</div>
                 <div className="roster-codename">
-                  {p.is_eliminated ? 'ELIMINATED' : code}
+                  {code}
+                  {p.is_eliminated && <span className="tag-elim"> · ELIMINATED</span>}
                 </div>
               </div>
             </button>

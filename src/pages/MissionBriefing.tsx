@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { getSession } from '../lib/session';
+import { useEliminated } from '../lib/useEliminated';
 import TerminalChrome from '../components/TerminalChrome';
 import Wordmark from '../components/Wordmark';
+import EliminatedBanner from '../components/EliminatedBanner';
 import { parseMoleBrief } from '../lib/moleBriefing';
 
 /**
@@ -15,6 +17,7 @@ export default function MissionBriefing() {
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
   const session = getSession();
+  const eliminated = useEliminated(session?.id);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -70,6 +73,7 @@ export default function MissionBriefing() {
 
   return (
     <TerminalChrome agentName={session?.name} avatarUrl={session?.avatar} status="BRIEFING">
+      {eliminated && <EliminatedBanner />}
       <Wordmark size={48} />
       <div className="mole-screen">
         <p className="mono-label">// MISSION BRIEFING</p>

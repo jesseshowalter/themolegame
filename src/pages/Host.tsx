@@ -339,6 +339,33 @@ function Dashboard() {
     return live.length ? Math.min(...live.map((s) => s.score)) : null;
   }, [standings, moleId]);
 
+  // "Rogue Agent" consolation prize: eliminated players keep playing, and the
+  // one with the most correct answers ACROSS THE WHOLE GAME wins. Always sums
+  // every round (independent of the standings view toggle) and ranks by correct.
+  const consolation = useMemo<Standing[]>(() => {
+    const byPlayer = new Map<string, Standing>();
+    for (const r of rows) {
+      const cur =
+        byPlayer.get(r.player_id) ??
+        {
+          player_id: r.player_id,
+          name: r.name,
+          codename: r.codename,
+          is_eliminated: r.is_eliminated,
+          answered: 0,
+          correct: 0,
+          score: 0,
+        };
+      cur.answered += r.answered_count;
+      cur.correct += r.correct_count;
+      cur.score += r.score;
+      byPlayer.set(r.player_id, cur);
+    }
+    return [...byPlayer.values()]
+      .filter((s) => s.is_eliminated)
+      .sort((a, b) => b.correct - a.correct || a.name.localeCompare(b.name));
+  }, [rows]);
+
   // Clicking a header sorts by it; clicking again flips direction.
   function toggleSort(key: 'agent' | 'correct' | 'incorrect' | 'score') {
     setSort((prev) =>
@@ -629,6 +656,48 @@ function Dashboard() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Rogue Agent — consolation prize for eliminated players. */}
+        <div className="consolation">
+          <p className="section-label">
+            Rogue Agent — most correct answers among eliminated agents (consolation prize)
+          </p>
+          {consolation.length === 0 ? (
+            <p className="mono-dim">
+              No agents eliminated yet. Eliminated players keep playing for this prize.
+            </p>
+          ) : (
+            <div className="table-scroll">
+              <table className="leaderboard">
+                <thead>
+                  <tr>
+                    <th>Agent</th>
+                    <th className="col-icon" title="Correct" aria-label="Correct">
+                      ✅
+                    </th>
+                    <th className="col-icon" title="Answered" aria-label="Answered">
+                      #
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {consolation.map((s, i) => (
+                    <tr key={s.player_id} className={i === 0 ? 'rogue-lead' : ''}>
+                      <td>
+                        <span className="rank-dot" />
+                        {s.name}
+                        {i === 0 && <span className="tag-rogue"> · FRONT-RUNNER</span>}
+                        <div className="mono-dim">{s.codename ?? ''}</div>
+                      </td>
+                      <td className="score-cell col-icon">{s.correct}</td>
+                      <td className="mono-dim col-icon">{s.answered}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
       )}

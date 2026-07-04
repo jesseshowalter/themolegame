@@ -382,6 +382,25 @@
   color: var(--white);
 }
 
+/* Encouragement strip shown to eliminated players who keep playing for the
+   Rogue Agent prize — accent-toned, not the alarming danger-red dead-end. */
+.consolation-banner {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto 20px;
+  border: 1px solid var(--accent-40);
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  color: var(--text-dim, var(--white));
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: var(--glow-accent);
+}
+.consolation-banner strong {
+  color: var(--accent);
+}
+
 /* ============================ HOST DASHBOARD ============================== */
 .host {
   width: 100%;
@@ -699,6 +718,24 @@
   vertical-align: middle;
 }
 .score-cell { font-weight: 700; color: var(--white); }
+
+/* Rogue Agent — consolation sub-standings for eliminated players. */
+.consolation {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--accent-20, var(--accent-40));
+}
+.consolation .leaderboard tr.rogue-lead td { color: var(--accent); }
+.consolation .leaderboard tr.rogue-lead .rank-dot {
+  background: var(--accent);
+  box-shadow: var(--glow-accent);
+}
+.tag-rogue {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  text-shadow: var(--glow-accent);
+}
 
 /* Condensed icon-header stat columns (correct / incorrect / score) */
 .leaderboard th.col-icon,

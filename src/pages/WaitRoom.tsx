@@ -6,6 +6,7 @@ import type { Quiz } from '../lib/types';
 import TerminalChrome from '../components/TerminalChrome';
 import Wordmark from '../components/Wordmark';
 import ConfigBanner from '../components/ConfigBanner';
+import EliminatedBanner from '../components/EliminatedBanner';
 
 export default function WaitRoom() {
   const navigate = useNavigate();
@@ -30,11 +31,9 @@ export default function WaitRoom() {
       .select('is_eliminated')
       .eq('id', session.id)
       .maybeSingle();
-    if (me?.is_eliminated) {
-      setEliminated(true);
-      setChecking(false);
-      return;
-    }
+    // Eliminated players stay in the field for the Rogue Agent prize: we note
+    // the flag (for status + copy) but keep routing them into rounds normally.
+    setEliminated(!!me?.is_eliminated);
 
     const { data: allRounds } = await supabase
       .from('quizzes')
@@ -107,7 +106,7 @@ export default function WaitRoom() {
     <TerminalChrome
       agentName={session?.name}
       avatarUrl={session?.avatar}
-      status={eliminated ? 'TERMINATED' : 'STANDBY'}
+      status={eliminated ? 'ELIMINATED' : 'STANDBY'}
     >
       <div className="header">
         <Wordmark size={52} />
@@ -115,17 +114,10 @@ export default function WaitRoom() {
 
       <ConfigBanner />
 
+      {eliminated && <EliminatedBanner />}
+
       <div className="status-center">
-        {eliminated ? (
-          <>
-            <div className="eliminated-banner">// AGENT TERMINATED</div>
-            <p className="status-sub">
-              You have been eliminated from the field.
-              <br />
-              Remain in position and observe. The Mole is still among us.
-            </p>
-          </>
-        ) : checking ? (
+        {checking ? (
           <p className="status-sub cursor">SCANNING FOR ACTIVE TRANSMISSION</p>
         ) : completedRound ? (
           <>
@@ -138,7 +130,9 @@ export default function WaitRoom() {
             <p className="mono-label">// NO ACTIVE ROUND</p>
             <h2 className="status-headline">STAND BY, {agentName}</h2>
             <p className="status-sub cursor">
-              The next quiz opens when the host initiates it
+              {eliminated
+                ? 'Keep going for the Rogue Agent prize — the next quiz opens when the host initiates it'
+                : 'The next quiz opens when the host initiates it'}
             </p>
           </>
         )}
