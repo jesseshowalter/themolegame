@@ -160,6 +160,15 @@ export default function PlayersPanel({ players, moleId, onSetMole, onChanged }: 
                   placeholder="Codename"
                 />
                 <div className="player-edit-actions">
+                  <button
+                    className={`btn-sm${moleId === p.id ? ' on' : ''}`}
+                    style={{ flex: 'unset' }}
+                    disabled={busy}
+                    onClick={() => onSetMole(moleId === p.id ? null : p.id)}
+                    title="Designate this player as the secret mole"
+                  >
+                    {moleId === p.id ? '★ Mole — tap to unset' : 'Set as Mole'}
+                  </button>
                   <button className="btn-sm" style={{ flex: 'unset' }} disabled={busy} onClick={saveEdit}>
                     Save
                   </button>
@@ -189,14 +198,6 @@ export default function PlayersPanel({ players, moleId, onSetMole, onChanged }: 
                 </div>
               </div>
               <div className="player-actions">
-                <button
-                  className={`btn-sm${moleId === p.id ? ' on' : ''}`}
-                  style={{ flex: 'unset' }}
-                  disabled={busy}
-                  onClick={() => onSetMole(moleId === p.id ? null : p.id)}
-                >
-                  {moleId === p.id ? '★ Mole' : 'Set Mole'}
-                </button>
                 <button className="btn-sm" style={{ flex: 'unset' }} disabled={busy} onClick={() => startEdit(p)}>
                   Edit
                 </button>
