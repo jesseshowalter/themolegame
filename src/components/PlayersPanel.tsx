@@ -58,18 +58,6 @@ export default function PlayersPanel({ players, onChanged }: Props) {
     await onChanged();
   }
 
-  async function toggleEliminated(p: Player) {
-    setBusy(true);
-    setErr(null);
-    const { error } = await supabase
-      .from('players')
-      .update({ is_eliminated: !p.is_eliminated })
-      .eq('id', p.id);
-    setBusy(false);
-    if (error) return setErr(error.message);
-    await onChanged();
-  }
-
   async function removePlayer(p: Player) {
     setBusy(true);
     setErr(null);
@@ -152,14 +140,6 @@ export default function PlayersPanel({ players, onChanged }: Props) {
               <div className="player-actions">
                 <button className="btn-sm" style={{ flex: 'unset' }} disabled={busy} onClick={() => startEdit(p)}>
                   Edit
-                </button>
-                <button
-                  className={`btn-sm${p.is_eliminated ? '' : ' warn'}`}
-                  style={{ flex: 'unset' }}
-                  disabled={busy}
-                  onClick={() => toggleEliminated(p)}
-                >
-                  {p.is_eliminated ? 'Revive' : 'Eliminate'}
                 </button>
                 {confirmDeleteId === p.id ? (
                   <span className="confirm-inline">
