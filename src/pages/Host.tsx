@@ -14,6 +14,12 @@ import {
 const PASSCODE = (import.meta.env.VITE_HOST_PASSCODE as string) || 'mole-master';
 const GATE_KEY = 'the-mole:host-unlocked';
 
+// Consistent phase-state labels: locked (gray) / active (green) / closed (red).
+// The raw status doubles as the CSS class for color; only the text changes.
+function phaseLabel(status: string): string {
+  return status === 'open' ? 'active' : status;
+}
+
 type View = number | 'all';
 
 interface Standing {
@@ -405,7 +411,9 @@ function Dashboard() {
                       </button>
                     </div>
                     <span className="round-title">Mission briefing</span>
-                    <span className={`round-status ${missionStatus}`}>● {missionStatus}</span>
+                    <span className={`round-status ${missionStatus}`}>
+                      ● {phaseLabel(missionStatus)}
+                    </span>
                     <div className="round-actions">
                       {missionStatus !== 'open' ? (
                         <button
@@ -413,7 +421,7 @@ function Dashboard() {
                           disabled={busy}
                           onClick={() => setMissionStatus(r, 'open')}
                         >
-                          Send
+                          Send Mission Briefing
                         </button>
                       ) : (
                         <button
@@ -436,7 +444,7 @@ function Dashboard() {
                       </button>
                     </div>
                     <span className="round-title">Quiz</span>
-                    <span className={`round-status ${r.status}`}>● {r.status}</span>
+                    <span className={`round-status ${r.status}`}>● {phaseLabel(r.status)}</span>
                     <div className="round-actions">
                       {r.status !== 'open' ? (
                         <button
@@ -444,7 +452,7 @@ function Dashboard() {
                           disabled={busy}
                           onClick={() => setRoundStatus(r, 'open')}
                         >
-                          Open
+                          Unlock the Quiz
                         </button>
                       ) : (
                         <button
