@@ -103,10 +103,10 @@ export default function Reveal() {
     }
     const timers = [
       window.setTimeout(() => setStep(1), 300), // // MISSION DEBRIEF
-      window.setTimeout(() => setStep(2), 1200), // DECRYPTING + redacted dossier scans
-      window.setTimeout(() => setStep(3), 3000), // unmask: photo sharpens, name decodes
-      window.setTimeout(() => setStep(4), 4400), // codename
-      window.setTimeout(() => setStep(5), 5200), // closing message + notes
+      window.setTimeout(() => setStep(2), 1200), // DECRYPTING + redacted dossier scans (~3.8s)
+      window.setTimeout(() => setStep(3), 5000), // unmask: photo sharpens, name decodes
+      window.setTimeout(() => setStep(4), 6400), // codename
+      window.setTimeout(() => setStep(5), 7200), // closing message + notes
     ];
     return () => timers.forEach(window.clearTimeout);
   }, [loading, mole]);
