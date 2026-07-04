@@ -608,9 +608,10 @@ function Dashboard() {
                       {isMole && <span className="tag-mole"> · MOLE</span>}
                       <div className="mono-dim">{s.codename ?? ''}</div>
                     </td>
-                    <td className="mono-dim col-icon">{s.correct}</td>
-                    <td className="mono-dim col-icon">{s.answered - s.correct}</td>
-                    <td className="score-cell col-icon">{s.score}</td>
+                    {/* The mole never takes quizzes — show dashes, not zeros. */}
+                    <td className="mono-dim col-icon">{isMole ? '—' : s.correct}</td>
+                    <td className="mono-dim col-icon">{isMole ? '—' : s.answered - s.correct}</td>
+                    <td className="score-cell col-icon">{isMole ? '—' : s.score}</td>
                     <td>
                       {isMole ? (
                         <span className="mono-dim">protected</span>
