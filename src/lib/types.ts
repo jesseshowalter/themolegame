@@ -141,6 +141,12 @@ export type Database = {
       };
       admin_get_password: { Args: { p_passcode: string; p_player: string }; Returns: string | null };
       verify_password: { Args: { p_player: string; p_password: string }; Returns: boolean };
+      // Endgame reveal — the mole's identity, but only while the host has the
+      // endgame briefing open (returns no rows otherwise).
+      reveal_mole: {
+        Args: Record<string, never>;
+        Returns: { name: string; codename: string | null; avatar_url: string | null }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

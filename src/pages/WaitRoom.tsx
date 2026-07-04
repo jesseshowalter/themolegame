@@ -40,9 +40,27 @@ export default function WaitRoom() {
       .select('*')
       .order('round_number');
     const rounds = allRounds ?? [];
-    const openMission = rounds.find((q) => q.mission_status === 'open');
+    // Bookend briefings live at sentinel round numbers: 0 = pre-game operation
+    // briefing, 99 = endgame reveal. Everything in between is a normal round.
+    const openIntro = rounds.find((q) => q.round_number === 0 && q.mission_status === 'open');
+    const openEndgame = rounds.find((q) => q.round_number === 99 && q.mission_status === 'open');
+    const openMission = rounds.find(
+      (q) => q.round_number > 0 && q.round_number < 99 && q.mission_status === 'open'
+    );
     const openQuiz = rounds.find((q) => q.status === 'open');
     const { data: isMole } = await supabase.rpc('mole_check', { p_player: session.id });
+
+    // Pre-game briefing: rules + strategy for everyone.
+    if (openIntro) {
+      navigate(`/play/intro/${openIntro.id}`, { replace: true });
+      return;
+    }
+
+    // Endgame: the reveal + thank-you, shown to everyone (mole included).
+    if (openEndgame) {
+      navigate(`/play/reveal/${openEndgame.id}`, { replace: true });
+      return;
+    }
 
     // Mission phase: EVERYONE (including the mole) sees the same public briefing,
     // so a glance at another screen never gives the mole away.

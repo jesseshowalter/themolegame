@@ -14,6 +14,14 @@ import {
 const PASSCODE = (import.meta.env.VITE_HOST_PASSCODE as string) || 'mole-master';
 const GATE_KEY = 'the-mole:host-unlocked';
 
+// Bookend briefings live at sentinel round numbers, outside the normal 1..N
+// rounds: 0 = pre-game operation briefing, 99 = endgame reveal.
+const INTRO_ROUND = 0;
+const ENDGAME_ROUND = 99;
+const isSpecialRound = (n: number) => n === INTRO_ROUND || n === ENDGAME_ROUND;
+const briefingVariant = (n: number): 'mission' | 'intro' | 'endgame' =>
+  n === INTRO_ROUND ? 'intro' : n === ENDGAME_ROUND ? 'endgame' : 'mission';
+
 // Consistent phase-state labels: locked (gray) / active (green) / closed (red).
 // The raw status doubles as the CSS class for color; only the text changes.
 function phaseLabel(status: string): string {
@@ -403,6 +411,7 @@ function Dashboard() {
     return (
       <MissionEditor
         round={editingMission}
+        variant={briefingVariant(editingMission.round_number)}
         onClose={() => {
           setEditingMissionId(null);
           refresh();
@@ -410,6 +419,63 @@ function Dashboard() {
       />
     );
   }
+
+  // Split the bookend briefings out from the normal 1..N rounds.
+  const intro = rounds.find((r) => r.round_number === INTRO_ROUND);
+  const endgame = rounds.find((r) => r.round_number === ENDGAME_ROUND);
+  const normalRounds = rounds.filter((r) => !isSpecialRound(r.round_number));
+
+  // A single full-width briefing card (pre-game / endgame) — like a round's
+  // mission card but standalone, with no paired quiz.
+  function briefingCard(
+    row: Quiz,
+    opts: { rowLabel: string; num: string; title: string; launchLabel: string }
+  ) {
+    const status = row.mission_status ?? 'locked';
+    return (
+      <div className="round-row" key={row.id}>
+        <p className="round-row-label">{opts.rowLabel}</p>
+        <div className="round-row-cards solo">
+          <div className={`round-card briefing-card${status === 'open' ? ' active' : ''}`}>
+            <div className="round-card-top">
+              <span className="round-num">{opts.num}</span>
+              <button className="round-edit" onClick={() => setEditingMissionId(row.id)}>
+                BRIEFING ›
+              </button>
+            </div>
+            <span className="round-title">{opts.title}</span>
+            <span className={`round-status ${status}`}>● {phaseLabel(status)}</span>
+            <div className="round-actions">
+              {status !== 'open' ? (
+                <button
+                  className="btn-sm"
+                  disabled={busy}
+                  onClick={() => setMissionStatus(row, 'open')}
+                >
+                  {opts.launchLabel}
+                </button>
+              ) : (
+                <button
+                  className="btn-sm warn"
+                  disabled={busy}
+                  onClick={() => setMissionStatus(row, 'closed')}
+                >
+                  Close
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const missingBriefingHint = (
+    <div className="banner" style={{ marginBottom: 24 }}>
+      <strong>// BRIEFINGS NOT INSTALLED.</strong> Run <code>supabase/briefings.sql</code> to
+      enable the pre-game and endgame briefings.
+    </div>
+  );
 
   return (
     <div className="host">
@@ -450,8 +516,18 @@ function Dashboard() {
       {/* Round controls — each round is a Mission card + a Quiz card */}
       {tab === 'rounds' && (
       <div>
+        {/* Pre-game operation briefing — sits above round one. */}
+        {intro
+          ? briefingCard(intro, {
+              rowLabel: 'PRE-GAME · OPERATION BRIEFING',
+              num: 'BRIEFING',
+              title: 'Operation briefing',
+              launchLabel: 'Launch Briefing',
+            })
+          : missingBriefingHint}
+
         <div className="round-rows">
-          {rounds.map((r) => {
+          {normalRounds.map((r) => {
             const missionStatus = r.mission_status ?? 'locked';
             return (
               <div className="round-row" key={r.id}>
@@ -527,6 +603,15 @@ function Dashboard() {
             );
           })}
         </div>
+
+        {/* Endgame reveal — the final row after round four. */}
+        {endgame &&
+          briefingCard(endgame, {
+            rowLabel: 'ENDGAME · THE REVEAL',
+            num: 'REVEAL',
+            title: 'The Mole revealed',
+            launchLabel: 'Reveal the Mole',
+          })}
       </div>
       )}
 
@@ -541,7 +626,7 @@ function Dashboard() {
           >
             Cumulative
           </button>
-          {rounds.map((r) => (
+          {normalRounds.map((r) => (
             <button
               key={r.id}
               className="btn-sm"

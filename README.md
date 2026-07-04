@@ -182,6 +182,13 @@ Pick one player to secretly play the saboteur:
 
 **Secrecy:** the mole's identity and their briefings live in RLS-locked tables that guests' key can't read, kept out of realtime, and reached only through passcode-gated (host) or mole-only functions — so a player inspecting the app can't see who the mole is. Because login is passwordless, a *determined* technical guest could still probe player-by-player; a strong `VITE_HOST_PASSCODE` (matched in the DB) protects the host-only reads. Good enough for a party; ask if you want per-player token hardening.
 
+### Bookend briefings
+Two extra briefings frame the four rounds, both on the **Rounds** tab:
+- **Pre-game operation briefing** (above round one) — the rules of the game plus strategy tips / what to watch for. Edit it with **BRIEFING ›**, then **Launch Briefing** to push the rules screen to every phone.
+- **Endgame reveal** (below round four) — **Reveal the Mole** unmasks the mole on every player's phone (their name, codename, and avatar) alongside your closing thank-you message. The mole's identity only becomes readable to players while this briefing is open (via the `reveal_mole()` function), so it stays secret until you launch it.
+
+Like missions, only one briefing/quiz is ever live at a time, and **Reset** re-locks both. Requires [`supabase/briefings.sql`](supabase/briefings.sql) once (fresh runs of `schema.sql` already include it).
+
 ---
 
 ## Project structure
@@ -191,6 +198,7 @@ supabase/
   schema.sql        tables, grading trigger, leaderboard view, RLS, realtime
   seed.sql          sample roster + 4 rounds of questions
   host-tools.sql    one-time add-on: delete policy for the Reset button
+  briefings.sql     one-time add-on: pre-game + endgame briefings + reveal RPC
 src/
   lib/
     supabase.ts        client (reads VITE_ env vars)

@@ -360,6 +360,52 @@
   margin-top: 4px;
 }
 
+/* ---- Endgame reveal ------------------------------------------------------- */
+.reveal-lead {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--danger);
+}
+.reveal-mole {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 8px;
+}
+.reveal-avatar {
+  width: 96px;
+  height: 96px;
+  border: 2px solid var(--danger);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-question);
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--danger);
+  box-shadow: 0 0 24px rgba(255, 59, 48, 0.5);
+}
+.reveal-name {
+  font-family: var(--font-question);
+  font-weight: 700;
+  font-size: clamp(32px, 8vw, 52px);
+  line-height: 1.05;
+  color: var(--danger);
+  text-shadow: 0 0 24px rgba(255, 59, 48, 0.5);
+}
+.reveal-codename {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--white-60);
+}
+
 /* ---- Config / error banner ------------------------------------------------ */
 .banner {
   width: 100%;
@@ -630,6 +676,10 @@
 .round-card.active {
   border-color: var(--accent);
   box-shadow: var(--glow-accent);
+}
+/* Standalone bookend briefing (pre-game / endgame): one full-width card. */
+.round-row-cards.solo {
+  grid-template-columns: 1fr;
 }
 .round-num {
   font-size: 10px;
