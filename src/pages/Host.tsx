@@ -261,7 +261,10 @@ function Dashboard() {
     try {
       await supabase.from('responses').delete().neq('id', IMPOSSIBLE);
       await supabase.from('players').update({ is_eliminated: false }).neq('id', IMPOSSIBLE);
-      await supabase.from('quizzes').update({ status: 'locked' }).neq('id', IMPOSSIBLE);
+      await supabase
+        .from('quizzes')
+        .update({ status: 'locked', mission_status: 'locked' })
+        .neq('id', IMPOSSIBLE);
       setView('all');
       await refresh();
     } finally {
