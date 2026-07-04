@@ -45,20 +45,18 @@ export default function WaitRoom() {
     const openQuiz = rounds.find((q) => q.status === 'open');
     const { data: isMole } = await supabase.rpc('mole_check', { p_player: session.id });
 
-    // Mission phase: mole gets their secret objectives, everyone else the brief.
+    // Mission phase: EVERYONE (including the mole) sees the same public briefing,
+    // so a glance at another screen never gives the mole away.
     if (openMission) {
-      navigate(
-        isMole ? `/play/mole/${openMission.id}` : `/play/mission/${openMission.id}`,
-        { replace: true }
-      );
+      navigate(`/play/mission/${openMission.id}`, { replace: true });
       return;
     }
 
-    // Quiz phase: the mole doesn't take the quiz, so they just stand by.
+    // Quiz phase: players take the quiz in private; the mole instead privately
+    // reads their objectives for the NEXT mission.
     if (openQuiz) {
       if (isMole) {
-        setCompletedRound(null);
-        setChecking(false);
+        navigate(`/play/mole/${openQuiz.id}`, { replace: true });
         return;
       }
       const [{ count: qCount }, { count: rCount }] = await Promise.all([

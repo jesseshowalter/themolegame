@@ -74,9 +74,11 @@ game).
 
 Each round has **two phases**, shown as a row of two cards in the **Rounds** tab:
 - **Mission** (left) — the physical challenge. **BRIEFING ›** edits the public
-  briefing; **Send** shows it to every player (the mole sees their secret
-  objectives instead). Close it when the challenge is done.
+  briefing; **Send** shows it to **every player, mole included** (so a glance at
+  another screen never gives the mole away). Close it when the challenge is done.
 - **Quiz** (right) — **QUESTIONS ›** edits questions; **Open** starts the quiz.
+  Players take it in private; the mole instead sees their objectives for the
+  **next** mission — safe to reveal while everyone's off in their own corner.
 
 Only one phase is live at a time — sending a mission or opening a quiz closes
 whatever else was open. Avatars are uploaded in the player **Edit** flow (resized and stored inline
@@ -167,7 +169,7 @@ Perfect for wiping a practice run before the real night.
 Pick one player to secretly play the saboteur:
 - **Designate** them with **Set Mole** on their row in the **Players** tab (only one at a time; toggle off to clear).
 - **Brief** them per round: open a round's **QUESTIONS** editor and fill the **Mole briefing** box — one sabotage instruction per line.
-- The mole **never takes the quiz**. When you open a round, their phone shows a classified *"YOU ARE THE MOLE"* screen with that round's directives instead of questions.
+- The mole **never takes the quiz**. During the **mission** they see the same public briefing as everyone. When you **open the quiz**, their phone shows a classified *"YOU ARE THE MOLE"* screen with the objectives for the **next** mission (authored in that next round's editor) — so they're briefed one round ahead, in private. Round 1's objectives aren't shown this way (no prior quiz), so brief the mole for round 1 beforehand or let them improvise.
 - The mole **can't be eliminated** and is excluded from the worst-score flag; the Standings tab marks them and shows *protected* instead of an eliminate button.
 
 **Secrecy:** the mole's identity and their briefings live in RLS-locked tables that guests' key can't read, kept out of realtime, and reached only through passcode-gated (host) or mole-only functions — so a player inspecting the app can't see who the mole is. Because login is passwordless, a *determined* technical guest could still probe player-by-player; a strong `VITE_HOST_PASSCODE` (matched in the DB) protects the host-only reads. Good enough for a party; ask if you want per-player token hardening.

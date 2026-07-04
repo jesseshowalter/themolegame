@@ -7,19 +7,24 @@ import Wordmark from '../components/Wordmark';
 import { parseMoleBrief } from '../lib/moleBriefing';
 
 /**
- * The mole's round screen. Instead of taking the quiz, the mole receives a
- * classified list of sabotage directives for the active round. The briefing is
- * fetched via a SECURITY DEFINER function that only returns it to the actual
- * mole — a non-mole gets null and is bounced back to the wait room.
+ * The mole's private screen, shown while a quiz is open (everyone else is off
+ * taking the quiz). It reveals the mole's objectives for the NEXT mission, so
+ * they can prepare to sabotage the upcoming challenge. During the public
+ * mission briefing the mole sees the normal briefing like everyone else, so
+ * nothing gives them away.
+ *
+ * The :quizId param is the CURRENTLY OPEN quiz (the trigger); the briefing shown
+ * is for the following round's mission.
  */
 export default function MoleBriefing() {
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
   const session = getSession();
 
+  const [nextTitle, setNextTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tasks, setTasks] = useState<string[]>([]);
-  const [roundTitle, setRoundTitle] = useState('');
+  const [noNext, setNoNext] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,26 +35,38 @@ export default function MoleBriefing() {
     if (!isSupabaseConfigured || !quizId) return;
 
     (async () => {
-      const { data: brief } = await supabase.rpc('mole_briefing', {
-        p_player: session.id,
-        p_quiz: quizId,
-      });
-      // null => caller isn't the mole (or round closed). Don't reveal anything.
-      if (brief == null) {
+      const { data: amMole } = await supabase.rpc('mole_check', { p_player: session.id });
+      if (!amMole) {
         navigate('/play/wait', { replace: true });
         return;
       }
-      const { data: q } = await supabase
+      // The quiz that put us here must still be open.
+      const { data: cur } = await supabase
         .from('quizzes')
-        .select('title,mission_status')
+        .select('round_number,status')
         .eq('id', quizId)
         .maybeSingle();
-      if (!q || q.mission_status !== 'open') {
+      if (!cur || cur.status !== 'open') {
         navigate('/play/wait', { replace: true });
         return;
       }
-      setRoundTitle(q.title);
-      const parsed = parseMoleBrief(String(brief));
+      // Objectives for the NEXT round's mission.
+      const { data: next } = await supabase
+        .from('quizzes')
+        .select('id,title')
+        .eq('round_number', cur.round_number + 1)
+        .maybeSingle();
+      if (!next) {
+        setNoNext(true);
+        setLoading(false);
+        return;
+      }
+      const { data: brief } = await supabase.rpc('mole_briefing', {
+        p_player: session.id,
+        p_quiz: next.id,
+      });
+      const parsed = parseMoleBrief(String(brief ?? ''));
+      setNextTitle(next.title);
       setDescription(parsed.description);
       setTasks(parsed.objectives);
       setLoading(false);
@@ -57,7 +74,7 @@ export default function MoleBriefing() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quizId]);
 
-  // When the host closes the round, return the mole to standby.
+  // When the triggering quiz closes, return the mole to standby.
   useEffect(() => {
     if (!isSupabaseConfigured || !quizId) return;
     const channel = supabase
@@ -66,7 +83,7 @@ export default function MoleBriefing() {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'quizzes', filter: `id=eq.${quizId}` },
         (payload) => {
-          if ((payload.new as { mission_status: string }).mission_status !== 'open')
+          if ((payload.new as { status: string }).status !== 'open')
             navigate('/play/wait', { replace: true });
         }
       )
@@ -91,30 +108,38 @@ export default function MoleBriefing() {
         <p className="mono-label mole-flag">// CLASSIFIED — EYES ONLY</p>
         <h2 className="status-headline mole-title">YOU ARE THE MOLE</h2>
 
-        {roundTitle && <p className="mono-label">// {roundTitle}</p>}
-        <p className="mole-desc">
-          {description ||
-            'Sabotage quietly. You always advance and cannot be eliminated.'}
-        </p>
-
         {loading ? (
-          <p className="status-sub cursor">DECRYPTING DIRECTIVES</p>
-        ) : tasks.length > 0 ? (
-          <ul className="mole-tasks">
-            {tasks.map((t, i) => (
-              <li key={i}>
-                <span className="mole-task-marker">▸</span>
-                {t}
-              </li>
-            ))}
-          </ul>
-        ) : (
+          <p className="status-sub cursor">DECRYPTING NEXT DIRECTIVE</p>
+        ) : noNext ? (
           <p className="status-sub">
-            No specific objectives this round. Improvise — blend in and mislead.
+            This is the final round — no further missions. Play your last hand and stay
+            hidden.
           </p>
+        ) : (
+          <>
+            <p className="mono-label">// NEXT MISSION{nextTitle ? ` — ${nextTitle}` : ''}</p>
+            <p className="mole-desc">
+              {description ||
+                'Prepare to sabotage the next challenge without being caught.'}
+            </p>
+            {tasks.length > 0 ? (
+              <ul className="mole-tasks">
+                {tasks.map((t, i) => (
+                  <li key={i}>
+                    <span className="mole-task-marker">▸</span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="status-sub">
+                No objectives set for the next mission yet. Improvise — blend in and mislead.
+              </p>
+            )}
+          </>
         )}
 
-        <p className="mono-dim mole-foot">Do not let them catch you.</p>
+        <p className="mono-dim mole-foot">Memorize this before the next briefing.</p>
       </div>
     </TerminalChrome>
   );
