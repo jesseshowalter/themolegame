@@ -329,6 +329,15 @@
   color: var(--accent);
   text-shadow: var(--text-glow);
 }
+/* Section heading over the strategy tips — same look as the main title,
+   scaled down for a subsection. */
+.brief-subhead {
+  font-family: var(--font-question);
+  font-weight: 700;
+  font-size: clamp(20px, 4vw, 28px);
+  line-height: 1.1;
+  margin-top: 14px;
+}
 .mole-tasks {
   list-style: none;
   width: 100%;

@@ -80,14 +80,17 @@ export default function IntroBriefing() {
           <p className="status-sub cursor">RECEIVING TRANSMISSION</p>
         ) : (
           tips.length > 0 && (
-            <ul className="mole-tasks">
-              {tips.map((t, i) => (
-                <li key={i}>
-                  <span className="mole-task-marker">▸</span>
-                  {t}
-                </li>
-              ))}
-            </ul>
+            <>
+              <h3 className="mission-title brief-subhead">FIELD STRATEGY</h3>
+              <ul className="mole-tasks">
+                {tips.map((t, i) => (
+                  <li key={i}>
+                    <span className="mole-task-marker">▸</span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </>
           )
         )}
 
