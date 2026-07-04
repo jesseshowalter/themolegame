@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Player } from '../lib/types';
 import { codenameFor } from '../lib/session';
+import { fileToAvatarDataUrl } from '../lib/avatar';
 
 interface Props {
   players: Player[];
@@ -17,6 +18,7 @@ export default function PlayersPanel({ players, onChanged }: Props) {
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editCode, setEditCode] = useState('');
+  const [editAvatar, setEditAvatar] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   async function addPlayer(e: React.FormEvent) {
@@ -39,7 +41,20 @@ export default function PlayersPanel({ players, onChanged }: Props) {
     setEditId(p.id);
     setEditName(p.name);
     setEditCode(p.codename ?? '');
+    setEditAvatar(p.avatar_url);
     setErr(null);
+  }
+
+  async function onPickAvatar(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-picking the same file
+    if (!file) return;
+    setErr(null);
+    try {
+      setEditAvatar(await fileToAvatarDataUrl(file));
+    } catch {
+      setErr('Could not read that image. Try a JPG or PNG.');
+    }
   }
 
   async function saveEdit() {
@@ -50,7 +65,7 @@ export default function PlayersPanel({ players, onChanged }: Props) {
     setErr(null);
     const { error } = await supabase
       .from('players')
-      .update({ name: n, codename: editCode.trim() || null })
+      .update({ name: n, codename: editCode.trim() || null, avatar_url: editAvatar })
       .eq('id', editId);
     setBusy(false);
     if (error) return setErr(error.message);
@@ -103,6 +118,33 @@ export default function PlayersPanel({ players, onChanged }: Props) {
           editId === p.id ? (
             <div key={p.id} className="player-row">
               <div className="player-edit">
+                <div className="avatar-edit">
+                  <div className="roster-avatar avatar-lg">
+                    {editAvatar ? (
+                      <img className="avatar-img" src={editAvatar} alt="" />
+                    ) : (
+                      editName[0]?.toUpperCase() ?? '?'
+                    )}
+                  </div>
+                  <label className="btn-sm" style={{ flex: 'unset', cursor: 'pointer' }}>
+                    {editAvatar ? 'Change photo' : 'Upload photo'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={onPickAvatar}
+                    />
+                  </label>
+                  {editAvatar && (
+                    <button
+                      className="btn-sm warn"
+                      style={{ flex: 'unset' }}
+                      onClick={() => setEditAvatar(null)}
+                    >
+                      Remove photo
+                    </button>
+                  )}
+                </div>
                 <input
                   className="q-input"
                   value={editName}
@@ -115,19 +157,25 @@ export default function PlayersPanel({ players, onChanged }: Props) {
                   onChange={(e) => setEditCode(e.target.value)}
                   placeholder="Codename"
                 />
-                <button className="btn-sm" style={{ flex: 'unset' }} disabled={busy} onClick={saveEdit}>
-                  Save
-                </button>
-                <button className="btn-sm" style={{ flex: 'unset' }} onClick={() => setEditId(null)}>
-                  Cancel
-                </button>
+                <div className="player-edit-actions">
+                  <button className="btn-sm" style={{ flex: 'unset' }} disabled={busy} onClick={saveEdit}>
+                    Save
+                  </button>
+                  <button className="btn-sm" style={{ flex: 'unset' }} onClick={() => setEditId(null)}>
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
             <div key={p.id} className={`player-row${p.is_eliminated ? ' eliminated' : ''}`}>
               <div className="player-id">
                 <div className="roster-avatar" style={{ width: 36, height: 36, fontSize: 15 }}>
-                  {p.name[0]?.toUpperCase() ?? '?'}
+                  {p.avatar_url ? (
+                    <img className="avatar-img" src={p.avatar_url} alt="" />
+                  ) : (
+                    p.name[0]?.toUpperCase() ?? '?'
+                  )}
                 </div>
                 <div>
                   <div className="player-name">

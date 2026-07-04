@@ -83,7 +83,13 @@ export default function PlayLogin() {
               disabled={p.is_eliminated}
               onClick={() => login(p)}
             >
-              <div className="roster-avatar">{p.name[0]?.toUpperCase() ?? '?'}</div>
+              <div className="roster-avatar">
+                {p.avatar_url ? (
+                  <img className="avatar-img" src={p.avatar_url} alt="" />
+                ) : (
+                  p.name[0]?.toUpperCase() ?? '?'
+                )}
+              </div>
               <div>
                 <div className="roster-name">{p.name}</div>
                 <div className="roster-codename">

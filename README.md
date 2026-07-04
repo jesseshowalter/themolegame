@@ -69,7 +69,9 @@ Open `http://localhost:5173/play` — you should see the roster instead of the
 
 The **`/host`** screen is organized into four tabs: **Rounds** (open/close each
 round), **Standings** (live scores + eliminate), **Players** (manage the roster —
-add, rename, eliminate, remove), and **Advanced** (bulk JSON import + reset game).
+add, rename, upload an avatar, remove), and **Advanced** (bulk JSON import + reset
+game). Avatars are uploaded in the player **Edit** flow (resized and stored inline
+— no external storage needed) and show on the login roster.
 
 1. On your laptop, open **`/join`** and project/show it — or open **`/host`** to drive the game.
 2. Guests scan the QR → land on `/play` → tap their name → they're in, sitting on the **STAND BY** screen.
