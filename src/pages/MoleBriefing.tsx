@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { getSession } from '../lib/session';
 import TerminalChrome from '../components/TerminalChrome';
 import Wordmark from '../components/Wordmark';
+import { parseMoleBrief } from '../lib/moleBriefing';
 
 /**
  * The mole's round screen. Instead of taking the quiz, the mole receives a
@@ -16,6 +17,7 @@ export default function MoleBriefing() {
   const navigate = useNavigate();
   const session = getSession();
 
+  const [description, setDescription] = useState('');
   const [tasks, setTasks] = useState<string[]>([]);
   const [roundTitle, setRoundTitle] = useState('');
   const [loading, setLoading] = useState(true);
@@ -47,12 +49,9 @@ export default function MoleBriefing() {
         return;
       }
       setRoundTitle(q.title);
-      setTasks(
-        String(brief)
-          .split('\n')
-          .map((l) => l.replace(/^\s*[-*•]\s*/, '').trim())
-          .filter(Boolean)
-      );
+      const parsed = parseMoleBrief(String(brief));
+      setDescription(parsed.description);
+      setTasks(parsed.objectives);
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -91,9 +90,11 @@ export default function MoleBriefing() {
       <div className="mole-screen">
         <p className="mono-label mole-flag">// CLASSIFIED — EYES ONLY</p>
         <h2 className="status-headline mole-title">YOU ARE THE MOLE</h2>
-        <p className="status-sub">
-          {roundTitle ? `${roundTitle} — ` : ''}sabotage quietly. You always advance and
-          cannot be eliminated.
+
+        {roundTitle && <p className="mono-label">// {roundTitle}</p>}
+        <p className="mole-desc">
+          {description ||
+            'Sabotage quietly. You always advance and cannot be eliminated.'}
         </p>
 
         {loading ? (
@@ -109,7 +110,7 @@ export default function MoleBriefing() {
           </ul>
         ) : (
           <p className="status-sub">
-            No specific directives this round. Improvise — blend in and mislead.
+            No specific objectives this round. Improvise — blend in and mislead.
           </p>
         )}
 

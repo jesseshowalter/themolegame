@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Question, Quiz } from '../lib/types';
+import { parseMoleBrief, serializeMoleBrief } from '../lib/moleBriefing';
 
 /**
  * A question row for the editor. correct_index is present only when the
@@ -39,7 +40,8 @@ export default function RoundEditor({ round, onClose }: Props) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [briefing, setBriefing] = useState('');
+  const [briefDesc, setBriefDesc] = useState('');
+  const [briefObjectives, setBriefObjectives] = useState('');
   const [briefingMsg, setBriefingMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -65,7 +67,9 @@ export default function RoundEditor({ round, onClose }: Props) {
       p_passcode: PASSCODE,
       p_quiz: round.id,
     });
-    setBriefing(typeof brief === 'string' ? brief : '');
+    const parsed = parseMoleBrief(typeof brief === 'string' ? brief : '');
+    setBriefDesc(parsed.description);
+    setBriefObjectives(parsed.objectives.join('\n'));
     setLoading(false);
   }, [round.id]);
 
@@ -75,7 +79,7 @@ export default function RoundEditor({ round, onClose }: Props) {
     const { error } = await supabase.rpc('admin_set_mole_briefing', {
       p_passcode: PASSCODE,
       p_quiz: round.id,
-      p_body: briefing,
+      p_body: serializeMoleBrief(briefDesc, briefObjectives),
     });
     setBusy(false);
     setBriefingMsg(error ? `❌ ${error.message}` : '✅ Saved');
@@ -205,20 +209,36 @@ export default function RoundEditor({ round, onClose }: Props) {
       <div>
         <p className="section-label">🕵 Mole briefing — only the Mole sees this</p>
         <p className="setup-hint">
-          One instruction per line — the sabotage tasks the Mole should try to pull off
-          this round. Players never see this.
+          Players never see this. Set the scene with a description, then list the sabotage
+          objectives — each line becomes its own mission item on the Mole's screen.
         </p>
+
+        <label className="q-label">Description</label>
+        <textarea
+          className="import-area"
+          style={{ minHeight: 80 }}
+          spellCheck={false}
+          placeholder="This round the team builds the best poker hand by collecting cards. Blend in while you undermine them."
+          value={briefDesc}
+          onChange={(e) => {
+            setBriefDesc(e.target.value);
+            setBriefingMsg(null);
+          }}
+        />
+
+        <label className="q-label">Objectives — one per line</label>
         <textarea
           className="import-area"
           style={{ minHeight: 120 }}
           spellCheck={false}
-          placeholder={'Lose the vault challenge without being obvious\nConvince someone to answer B\nStall the group for 5 minutes'}
-          value={briefing}
+          placeholder={'Collect the worst cards you can\nSlow the group down by being indecisive\nThrow suspicion on someone who pulls a bad card'}
+          value={briefObjectives}
           onChange={(e) => {
-            setBriefing(e.target.value);
+            setBriefObjectives(e.target.value);
             setBriefingMsg(null);
           }}
         />
+
         <div className="round-actions" style={{ marginTop: 8 }}>
           <button
             className="btn-sm"

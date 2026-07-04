@@ -315,8 +315,14 @@
   color: var(--danger);
 }
 .mole-title {
-  color: var(--accent);
-  text-shadow: var(--text-glow);
+  color: var(--danger);
+  text-shadow: 0 0 24px rgba(255, 59, 48, 0.5);
+}
+.mole-desc {
+  color: var(--white);
+  font-size: 16px;
+  line-height: 1.5;
+  max-width: 560px;
 }
 .mole-tasks {
   list-style: none;
