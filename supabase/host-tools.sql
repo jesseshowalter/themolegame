@@ -62,3 +62,86 @@ $$;
 
 revoke all on function public.admin_questions(text, uuid) from public;
 grant execute on function public.admin_questions(text, uuid) to anon, authenticated;
+-- THE MOLE — secret mole assignment + per-round briefings.
+-- RLS-locked, no anon policies, kept OUT of realtime. Accessed only via
+-- SECURITY DEFINER functions (host functions gated by the handler passcode).
+-- ============================================================================
+create table if not exists public.mole_assignment (
+  id        int primary key default 1 check (id = 1),
+  player_id uuid references public.players(id) on delete set null
+);
+insert into public.mole_assignment (id, player_id) values (1, null)
+  on conflict (id) do nothing;
+alter table public.mole_assignment enable row level security;
+revoke all on public.mole_assignment from anon, authenticated;
+
+create table if not exists public.mole_briefings (
+  quiz_id uuid primary key references public.quizzes(id) on delete cascade,
+  body    text not null default ''
+);
+alter table public.mole_briefings enable row level security;
+revoke all on public.mole_briefings from anon, authenticated;
+
+create or replace function public.admin_get_mole(p_passcode text)
+returns uuid language plpgsql security definer set search_path = public as $$
+begin
+  if p_passcode is distinct from (select value from public.app_config where key='host_passcode') then
+    raise exception 'unauthorized';
+  end if;
+  return (select player_id from public.mole_assignment where id = 1);
+end; $$;
+
+create or replace function public.admin_set_mole(p_passcode text, p_player uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if p_passcode is distinct from (select value from public.app_config where key='host_passcode') then
+    raise exception 'unauthorized';
+  end if;
+  update public.mole_assignment set player_id = p_player where id = 1;
+end; $$;
+
+create or replace function public.admin_get_mole_briefing(p_passcode text, p_quiz uuid)
+returns text language plpgsql security definer set search_path = public as $$
+begin
+  if p_passcode is distinct from (select value from public.app_config where key='host_passcode') then
+    raise exception 'unauthorized';
+  end if;
+  return coalesce((select body from public.mole_briefings where quiz_id = p_quiz), '');
+end; $$;
+
+create or replace function public.admin_set_mole_briefing(p_passcode text, p_quiz uuid, p_body text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if p_passcode is distinct from (select value from public.app_config where key='host_passcode') then
+    raise exception 'unauthorized';
+  end if;
+  insert into public.mole_briefings (quiz_id, body) values (p_quiz, coalesce(p_body, ''))
+    on conflict (quiz_id) do update set body = excluded.body;
+end; $$;
+
+create or replace function public.mole_check(p_player uuid)
+returns boolean language sql security definer set search_path = public as $$
+  select exists (select 1 from public.mole_assignment where id = 1 and player_id = p_player);
+$$;
+
+create or replace function public.mole_briefing(p_player uuid, p_quiz uuid)
+returns text language plpgsql security definer set search_path = public as $$
+begin
+  if not exists (select 1 from public.mole_assignment where id = 1 and player_id = p_player) then
+    return null;
+  end if;
+  return coalesce((select body from public.mole_briefings where quiz_id = p_quiz), '');
+end; $$;
+
+revoke all on function public.admin_get_mole(text)                      from public;
+revoke all on function public.admin_set_mole(text, uuid)                from public;
+revoke all on function public.admin_get_mole_briefing(text, uuid)       from public;
+revoke all on function public.admin_set_mole_briefing(text, uuid, text) from public;
+revoke all on function public.mole_check(uuid)                          from public;
+revoke all on function public.mole_briefing(uuid, uuid)                 from public;
+grant execute on function public.admin_get_mole(text)                      to anon, authenticated;
+grant execute on function public.admin_set_mole(text, uuid)                to anon, authenticated;
+grant execute on function public.admin_get_mole_briefing(text, uuid)       to anon, authenticated;
+grant execute on function public.admin_set_mole_briefing(text, uuid, text) to anon, authenticated;
+grant execute on function public.mole_check(uuid)                          to anon, authenticated;
+grant execute on function public.mole_briefing(uuid, uuid)                 to anon, authenticated;

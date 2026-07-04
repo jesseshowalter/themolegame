@@ -50,6 +50,13 @@ export default function WaitRoom() {
       return;
     }
 
+    // The mole never takes the quiz — route them to their round briefing.
+    const { data: isMole } = await supabase.rpc('mole_check', { p_player: session.id });
+    if (isMole) {
+      navigate(`/play/mole/${open.id}`, { replace: true });
+      return;
+    }
+
     // Has this player already answered every question in the open round?
     const [{ count: qCount }, { count: rCount }] = await Promise.all([
       supabase

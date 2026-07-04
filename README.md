@@ -69,8 +69,8 @@ Open `http://localhost:5173/play` — you should see the roster instead of the
 
 The **`/host`** screen is organized into four tabs: **Rounds** (open/close each
 round), **Standings** (live scores + eliminate), **Players** (manage the roster —
-add, rename, upload an avatar, remove), and **Advanced** (bulk JSON import + reset
-game). Avatars are uploaded in the player **Edit** flow (resized and stored inline
+add, rename, upload an avatar, designate the mole, remove), and **Advanced** (bulk
+JSON import + reset game). Avatars are uploaded in the player **Edit** flow (resized and stored inline
 — no external storage needed) and show on the login roster.
 
 1. On your laptop, open **`/join`** and project/show it — or open **`/host`** to drive the game.
@@ -153,6 +153,15 @@ tweaked `seed.sql`.
 **`/host` → Danger zone → Reset** clears every answer, brings all eliminated
 players back, and re-locks all rounds — your roster and questions stay put.
 Perfect for wiping a practice run before the real night.
+
+### The Mole
+Pick one player to secretly play the saboteur:
+- **Designate** them with **Set Mole** on their row in the **Players** tab (only one at a time; toggle off to clear).
+- **Brief** them per round: open a round's **QUESTIONS** editor and fill the **Mole briefing** box — one sabotage instruction per line.
+- The mole **never takes the quiz**. When you open a round, their phone shows a classified *"YOU ARE THE MOLE"* screen with that round's directives instead of questions.
+- The mole **can't be eliminated** and is excluded from the worst-score flag; the Standings tab marks them and shows *protected* instead of an eliminate button.
+
+**Secrecy:** the mole's identity and their briefings live in RLS-locked tables that guests' key can't read, kept out of realtime, and reached only through passcode-gated (host) or mole-only functions — so a player inspecting the app can't see who the mole is. Because login is passwordless, a *determined* technical guest could still probe player-by-player; a strong `VITE_HOST_PASSCODE` (matched in the DB) protects the host-only reads. Good enough for a party; ask if you want per-player token hardening.
 
 ---
 

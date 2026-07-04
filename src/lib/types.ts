@@ -115,6 +115,22 @@ export type Database = {
         Args: { p_passcode: string; p_quiz: string };
         Returns: Question[];
       };
+      // Mole feature (secrets live in RLS-locked tables, reached via these fns).
+      admin_get_mole: { Args: { p_passcode: string }; Returns: string | null };
+      admin_set_mole: {
+        Args: { p_passcode: string; p_player: string | null };
+        Returns: undefined;
+      };
+      admin_get_mole_briefing: {
+        Args: { p_passcode: string; p_quiz: string };
+        Returns: string;
+      };
+      admin_set_mole_briefing: {
+        Args: { p_passcode: string; p_quiz: string; p_body: string };
+        Returns: undefined;
+      };
+      mole_check: { Args: { p_player: string }; Returns: boolean };
+      mole_briefing: { Args: { p_player: string; p_quiz: string }; Returns: string | null };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

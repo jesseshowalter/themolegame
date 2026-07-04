@@ -39,6 +39,8 @@ export default function RoundEditor({ round, onClose }: Props) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [briefing, setBriefing] = useState('');
+  const [briefingMsg, setBriefingMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     // Prefer the handler-only reader (shows correct answers). Fall back to the
@@ -59,8 +61,25 @@ export default function RoundEditor({ round, onClose }: Props) {
       setItems((data as Row[]) ?? []);
       setHasKey(false);
     }
+    const { data: brief } = await supabase.rpc('admin_get_mole_briefing', {
+      p_passcode: PASSCODE,
+      p_quiz: round.id,
+    });
+    setBriefing(typeof brief === 'string' ? brief : '');
     setLoading(false);
   }, [round.id]);
+
+  async function saveBriefing() {
+    setBusy(true);
+    setBriefingMsg(null);
+    const { error } = await supabase.rpc('admin_set_mole_briefing', {
+      p_passcode: PASSCODE,
+      p_quiz: round.id,
+      p_body: briefing,
+    });
+    setBusy(false);
+    setBriefingMsg(error ? `❌ ${error.message}` : '✅ Saved');
+  }
 
   useEffect(() => {
     load();
@@ -180,6 +199,41 @@ export default function RoundEditor({ round, onClose }: Props) {
           ROUND {round.round_number} · {round.title}
         </div>
         <span className="host-tag">{items.length} question(s)</span>
+      </div>
+
+      {/* Mole briefing — only the mole sees this during the round */}
+      <div>
+        <p className="section-label">🕵 Mole briefing — only the Mole sees this</p>
+        <p className="setup-hint">
+          One instruction per line — the sabotage tasks the Mole should try to pull off
+          this round. Players never see this.
+        </p>
+        <textarea
+          className="import-area"
+          style={{ minHeight: 120 }}
+          spellCheck={false}
+          placeholder={'Lose the vault challenge without being obvious\nConvince someone to answer B\nStall the group for 5 minutes'}
+          value={briefing}
+          onChange={(e) => {
+            setBriefing(e.target.value);
+            setBriefingMsg(null);
+          }}
+        />
+        <div className="round-actions" style={{ marginTop: 8 }}>
+          <button
+            className="btn-sm"
+            style={{ flex: 'unset' }}
+            disabled={busy}
+            onClick={saveBriefing}
+          >
+            Save briefing
+          </button>
+          {briefingMsg && (
+            <span className="mono-dim" style={{ alignSelf: 'center' }}>
+              {briefingMsg}
+            </span>
+          )}
+        </div>
       </div>
 
       {!loading && !hasKey && items.length > 0 && (

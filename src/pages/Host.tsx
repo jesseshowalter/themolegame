@@ -79,6 +79,7 @@ function Dashboard() {
   const [rounds, setRounds] = useState<Quiz[]>([]);
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [moleId, setMoleId] = useState<string | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [tab, setTab] = useState<'rounds' | 'standings' | 'players' | 'advanced'>('rounds');
   const [view, setView] = useState<View>('all');
@@ -96,15 +97,17 @@ function Dashboard() {
   const [importMsg, setImportMsg] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [{ data: qs }, { data: lb }, { data: pq }, { data: pl }] = await Promise.all([
+    const [{ data: qs }, { data: lb }, { data: pq }, { data: pl }, mole] = await Promise.all([
       supabase.from('quizzes').select('*').order('round_number'),
       supabase.from('leaderboard').select('*'),
       supabase.from('public_questions').select('quiz_id'),
       supabase.from('players').select('*').order('name'),
+      supabase.rpc('admin_get_mole', { p_passcode: PASSCODE }),
     ]);
     setRounds(qs ?? []);
     setRows((lb as LeaderboardRow[]) ?? []);
     setPlayers((pl as Player[]) ?? []);
+    setMoleId((mole.error ? null : (mole.data as string | null)) ?? null);
     const c: Record<string, number> = {};
     (pq ?? []).forEach((row) => {
       c[row.quiz_id] = (c[row.quiz_id] ?? 0) + 1;
@@ -151,6 +154,18 @@ function Dashboard() {
   async function revive(playerId: string) {
     setBusy(true);
     await supabase.from('players').update({ is_eliminated: false }).eq('id', playerId);
+    await refresh();
+    setBusy(false);
+  }
+
+  // Designate (or clear) the mole. Pass null to unset.
+  async function setMole(playerId: string | null) {
+    setBusy(true);
+    const { error } = await supabase.rpc('admin_set_mole', {
+      p_passcode: PASSCODE,
+      p_player: playerId,
+    });
+    if (!error) setMoleId(playerId);
     await refresh();
     setBusy(false);
   }
@@ -266,9 +281,12 @@ function Dashboard() {
   // Lowest score among still-active agents who have actually answered — the
   // elimination candidate(s).
   const worstScore = useMemo(() => {
-    const live = standings.filter((s) => !s.is_eliminated && s.answered > 0);
+    // The mole never takes quizzes and can't be eliminated — exclude them.
+    const live = standings.filter(
+      (s) => !s.is_eliminated && s.answered > 0 && s.player_id !== moleId
+    );
     return live.length ? Math.min(...live.map((s) => s.score)) : null;
-  }, [standings]);
+  }, [standings, moleId]);
 
   // Clicking a header sorts by it; clicking again flips direction.
   function toggleSort(key: 'agent' | 'correct' | 'incorrect' | 'score') {
@@ -440,8 +458,9 @@ function Dashboard() {
             </thead>
             <tbody>
               {standings.map((s) => {
+                const isMole = s.player_id === moleId;
                 const isWorst =
-                  !s.is_eliminated && s.answered > 0 && s.score === worstScore;
+                  !isMole && !s.is_eliminated && s.answered > 0 && s.score === worstScore;
                 return (
                   <tr
                     key={s.player_id}
@@ -452,13 +471,16 @@ function Dashboard() {
                     <td>
                       <span className="rank-dot" />
                       {s.name}
+                      {isMole && <span className="tag-mole"> · MOLE</span>}
                       <div className="mono-dim">{s.codename ?? ''}</div>
                     </td>
                     <td className="mono-dim col-icon">{s.correct}</td>
                     <td className="mono-dim col-icon">{s.answered - s.correct}</td>
                     <td className="score-cell col-icon">{s.score}</td>
                     <td>
-                      {s.is_eliminated ? (
+                      {isMole ? (
+                        <span className="mono-dim">protected</span>
+                      ) : s.is_eliminated ? (
                         <button
                           className="btn-sm"
                           disabled={busy}
@@ -506,7 +528,14 @@ function Dashboard() {
       )}
 
       {/* Players / roster */}
-      {tab === 'players' && <PlayersPanel players={players} onChanged={refresh} />}
+      {tab === 'players' && (
+        <PlayersPanel
+          players={players}
+          moleId={moleId}
+          onSetMole={setMole}
+          onChanged={refresh}
+        />
+      )}
 
       {/* Advanced: bulk import + reset */}
       {tab === 'advanced' && (

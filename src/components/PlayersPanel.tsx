@@ -6,11 +6,13 @@ import { fileToAvatarDataUrl } from '../lib/avatar';
 
 interface Props {
   players: Player[];
+  moleId: string | null;
+  onSetMole: (id: string | null) => void | Promise<void>;
   onChanged: () => void | Promise<void>;
 }
 
-/** Roster management: add, rename, eliminate/revive, remove agents. */
-export default function PlayersPanel({ players, onChanged }: Props) {
+/** Roster management: add, rename, remove agents, and designate the mole. */
+export default function PlayersPanel({ players, moleId, onSetMole, onChanged }: Props) {
   const [name, setName] = useState('');
   const [codename, setCodename] = useState('');
   const [busy, setBusy] = useState(false);
@@ -180,12 +182,21 @@ export default function PlayersPanel({ players, onChanged }: Props) {
                 <div>
                   <div className="player-name">
                     {p.name}
+                    {moleId === p.id && <span className="tag-mole"> · MOLE</span>}
                     {p.is_eliminated && <span className="tag-elim"> · ELIMINATED</span>}
                   </div>
                   <div className="mono-dim">{codenameFor(p.name, p.codename)}</div>
                 </div>
               </div>
               <div className="player-actions">
+                <button
+                  className={`btn-sm${moleId === p.id ? ' on' : ''}`}
+                  style={{ flex: 'unset' }}
+                  disabled={busy}
+                  onClick={() => onSetMole(moleId === p.id ? null : p.id)}
+                >
+                  {moleId === p.id ? '★ Mole' : 'Set Mole'}
+                </button>
                 <button className="btn-sm" style={{ flex: 'unset' }} disabled={busy} onClick={() => startEdit(p)}>
                   Edit
                 </button>
