@@ -551,11 +551,15 @@
   gap: 12px;
 }
 
-/* Rounds as rows: mission card + quiz card side by side */
+/* Rounds as rows: mission card + quiz card side by side, divided per round */
 .round-rows {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+}
+.round-row:not(:first-child) {
+  border-top: 1px solid var(--accent-20);
+  margin-top: 28px;
+  padding-top: 28px;
 }
 .round-row-label {
   font-size: 12px;

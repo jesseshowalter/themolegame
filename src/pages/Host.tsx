@@ -387,7 +387,6 @@ function Dashboard() {
       {/* Round controls — each round is a Mission card + a Quiz card */}
       {tab === 'rounds' && (
       <div>
-        <p className="section-label">Rounds — send the mission, then open the quiz</p>
         <div className="round-rows">
           {rounds.map((r) => {
             const missionStatus = r.mission_status ?? 'locked';
