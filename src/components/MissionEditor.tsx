@@ -17,6 +17,8 @@ const COPY: Record<Variant, {
   heading: (r: Quiz) => string;
   sectionLabel: string;
   hint: string;
+  titleLabel?: string; // when set, an editable heading field appears
+  titlePlaceholder?: string;
   descLabel: string;
   descPlaceholder: string;
   objLabel: string;
@@ -25,7 +27,9 @@ const COPY: Record<Variant, {
   mission: {
     heading: (r) => `ROUND ${r.round_number} · ${r.title} — MISSION`,
     sectionLabel: 'Mission briefing — shown to all players when you send it',
-    hint: "Describe the challenge, then list what players should do. Each objective line becomes its own item on the players' screens.",
+    hint: "Name the mission, describe the challenge, then list what players should do. Each objective line becomes its own item on the players' screens.",
+    titleLabel: 'Mission title — the large heading players see',
+    titlePlaceholder: 'THE CASING',
     descLabel: 'Description',
     descPlaceholder:
       'Build the best 5-card poker hand as a team by collecting cards hidden around the house.',
@@ -64,6 +68,7 @@ const COPY: Record<Variant, {
 export default function MissionEditor({ round, onClose, variant = 'mission' }: Props) {
   const copy = COPY[variant];
   const initial = parseMoleBrief(round.mission_briefing);
+  const [title, setTitle] = useState(initial.title);
   const [description, setDescription] = useState(initial.description);
   const [objectives, setObjectives] = useState(initial.objectives.join('\n'));
   const [busy, setBusy] = useState(false);
@@ -74,7 +79,7 @@ export default function MissionEditor({ round, onClose, variant = 'mission' }: P
     setMsg(null);
     const { error } = await supabase
       .from('quizzes')
-      .update({ mission_briefing: serializeMoleBrief(description, objectives) })
+      .update({ mission_briefing: serializeMoleBrief(description, objectives, title) })
       .eq('id', round.id);
     setBusy(false);
     setMsg(error ? `❌ ${error.message}` : '✅ Saved');
@@ -92,6 +97,21 @@ export default function MissionEditor({ round, onClose, variant = 'mission' }: P
       <div>
         <p className="section-label">{copy.sectionLabel}</p>
         <p className="setup-hint">{copy.hint}</p>
+
+        {copy.titleLabel && (
+          <>
+            <label className="q-label">{copy.titleLabel}</label>
+            <input
+              className="q-input"
+              placeholder={copy.titlePlaceholder}
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                setMsg(null);
+              }}
+            />
+          </>
+        )}
 
         <label className="q-label">{copy.descLabel}</label>
         <textarea

@@ -42,7 +42,7 @@ export default function MissionBriefing() {
         return;
       }
       const parsed = parseMoleBrief(q.mission_briefing);
-      setTitle(q.title);
+      setTitle(parsed.title || q.title);
       setDescription(parsed.description);
       setObjectives(parsed.objectives);
       setLoading(false);

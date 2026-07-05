@@ -8,6 +8,7 @@
  * one per line, with an empty description.
  */
 export interface MoleBrief {
+  title: string; // optional display heading (used by mission briefings)
   description: string;
   objectives: string[];
 }
@@ -20,11 +21,12 @@ function linesToObjectives(text: string): string[] {
 }
 
 export function parseMoleBrief(body: string | null | undefined): MoleBrief {
-  if (!body) return { description: '', objectives: [] };
+  if (!body) return { title: '', description: '', objectives: [] };
   try {
     const o = JSON.parse(body);
-    if (o && typeof o === 'object' && ('description' in o || 'objectives' in o)) {
+    if (o && typeof o === 'object' && ('description' in o || 'objectives' in o || 'title' in o)) {
       return {
+        title: typeof o.title === 'string' ? o.title : '',
         description: typeof o.description === 'string' ? o.description : '',
         objectives: Array.isArray(o.objectives) ? o.objectives.map(String).filter(Boolean) : [],
       };
@@ -32,11 +34,16 @@ export function parseMoleBrief(body: string | null | undefined): MoleBrief {
   } catch {
     /* not JSON — fall through to legacy handling */
   }
-  return { description: '', objectives: linesToObjectives(body) };
+  return { title: '', description: '', objectives: linesToObjectives(body) };
 }
 
-export function serializeMoleBrief(description: string, objectivesText: string): string {
+export function serializeMoleBrief(
+  description: string,
+  objectivesText: string,
+  title = ''
+): string {
   return JSON.stringify({
+    title: title.trim(),
     description: description.trim(),
     objectives: linesToObjectives(objectivesText),
   });
