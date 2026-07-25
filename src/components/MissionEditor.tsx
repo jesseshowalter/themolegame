@@ -187,7 +187,7 @@ export default function MissionEditor({ round, onClose, variant = 'mission' }: P
 
       {/* Pre-game only: the mole's private orders for the first mission. */}
       {showMole && (
-        <div style={{ marginTop: 32 }}>
+        <div className="mole-orders" style={{ marginTop: 32 }}>
           <p className="section-label">🕵 Mole orders — only the Mole sees this</p>
           <p className="setup-hint">
             Players never see this. Shown privately to the Mole in this pre-game briefing —

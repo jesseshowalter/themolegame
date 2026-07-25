@@ -370,6 +370,36 @@
   margin-top: 4px;
 }
 
+/* Host: any Mole-related grouping in a briefing editor is outlined + labeled
+   in red, so it's unmistakable which controls concern the Mole. */
+.mole-orders {
+  border: 1px solid rgba(255, 59, 48, 0.45);
+  border-radius: var(--radius);
+  padding: 20px;
+  background: rgba(255, 59, 48, 0.04);
+}
+.mole-orders .section-label,
+.mole-orders .q-label {
+  color: var(--danger);
+}
+.mole-orders .q-input,
+.mole-orders .import-area {
+  border-color: rgba(255, 59, 48, 0.5);
+}
+.mole-orders .q-input:focus,
+.mole-orders .import-area:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 12px rgba(255, 59, 48, 0.5);
+}
+.mole-orders .btn-sm {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.mole-orders .btn-sm:hover:not(:disabled) {
+  background: var(--danger);
+  color: var(--white);
+}
+
 /* Mole-only round 1 orders inside the pre-game briefing (tap to reveal). */
 .mole-section {
   width: 100%;

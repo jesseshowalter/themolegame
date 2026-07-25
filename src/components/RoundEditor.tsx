@@ -206,7 +206,7 @@ export default function RoundEditor({ round, onClose }: Props) {
       </div>
 
       {/* Mole orders — shown privately to the mole during THIS round's quiz */}
-      <div>
+      <div className="mole-orders" style={{ marginTop: 24 }}>
         <p className="section-label">🕵 Mole orders — only the Mole sees this</p>
         <p className="setup-hint">
           Players never see this. Shown privately to the Mole during THIS round's quiz (while
