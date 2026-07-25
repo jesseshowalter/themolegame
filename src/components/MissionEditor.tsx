@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Quiz } from '../lib/types';
 import { parseMoleBrief, serializeMoleBrief } from '../lib/moleBriefing';
+
+const PASSCODE = (import.meta.env.VITE_HOST_PASSCODE as string) || 'mole-master';
 
 type Variant = 'mission' | 'intro' | 'endgame';
 
@@ -74,6 +76,26 @@ export default function MissionEditor({ round, onClose, variant = 'mission' }: P
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
+  // Pre-game only: the mole's private orders for the FIRST mission (stored in
+  // this briefing's mole_briefings row, same as a round's mole orders).
+  const showMole = variant === 'intro';
+  const [moleDesc, setMoleDesc] = useState('');
+  const [moleObjectives, setMoleObjectives] = useState('');
+  const [moleMsg, setMoleMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!showMole) return;
+    (async () => {
+      const { data } = await supabase.rpc('admin_get_mole_briefing', {
+        p_passcode: PASSCODE,
+        p_quiz: round.id,
+      });
+      const parsed = parseMoleBrief(typeof data === 'string' ? data : '');
+      setMoleDesc(parsed.description);
+      setMoleObjectives(parsed.objectives.join('\n'));
+    })();
+  }, [showMole, round.id]);
+
   async function save() {
     setBusy(true);
     setMsg(null);
@@ -83,6 +105,18 @@ export default function MissionEditor({ round, onClose, variant = 'mission' }: P
       .eq('id', round.id);
     setBusy(false);
     setMsg(error ? `❌ ${error.message}` : '✅ Saved');
+  }
+
+  async function saveMole() {
+    setBusy(true);
+    setMoleMsg(null);
+    const { error } = await supabase.rpc('admin_set_mole_briefing', {
+      p_passcode: PASSCODE,
+      p_quiz: round.id,
+      p_body: serializeMoleBrief(moleDesc, moleObjectives),
+    });
+    setBusy(false);
+    setMoleMsg(error ? `❌ ${error.message}` : '✅ Saved');
   }
 
   return (
@@ -150,6 +184,56 @@ export default function MissionEditor({ round, onClose, variant = 'mission' }: P
           )}
         </div>
       </div>
+
+      {/* Pre-game only: the mole's private orders for the first mission. */}
+      {showMole && (
+        <div style={{ marginTop: 32 }}>
+          <p className="section-label">🕵 Mole orders — only the Mole sees this</p>
+          <p className="setup-hint">
+            Players never see this. Shown privately to the Mole in this pre-game briefing —
+            their prep for the FIRST mission. Each objective line becomes its own item on
+            the Mole's screen. (Later rounds' mole orders are set in each round's QUESTIONS
+            editor.)
+          </p>
+
+          <label className="q-label">Description</label>
+          <textarea
+            className="import-area"
+            style={{ minHeight: 100 }}
+            spellCheck={false}
+            placeholder="While the crew memorizes the casino floor, quietly move badges and swap a chip stack so their notes don't add up."
+            value={moleDesc}
+            onChange={(e) => {
+              setMoleDesc(e.target.value);
+              setMoleMsg(null);
+            }}
+          />
+
+          <label className="q-label">Objectives — one per line</label>
+          <textarea
+            className="import-area"
+            style={{ minHeight: 120 }}
+            spellCheck={false}
+            placeholder={'Move at least 2 items before the floor closes\nSteer one person to a wrong count\nNever be the last to suggest an answer'}
+            value={moleObjectives}
+            onChange={(e) => {
+              setMoleObjectives(e.target.value);
+              setMoleMsg(null);
+            }}
+          />
+
+          <div className="round-actions" style={{ marginTop: 8 }}>
+            <button className="btn-sm" style={{ flex: 'unset' }} disabled={busy} onClick={saveMole}>
+              Save mole orders
+            </button>
+            {moleMsg && (
+              <span className="mono-dim" style={{ alignSelf: 'center' }}>
+                {moleMsg}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

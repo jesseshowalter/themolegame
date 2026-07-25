@@ -8,23 +8,22 @@ import { parseMoleBrief } from '../lib/moleBriefing';
 
 /**
  * The mole's private screen, shown while a quiz is open (everyone else is off
- * taking the quiz). It reveals the mole's objectives for the NEXT mission, so
- * they can prepare to sabotage the upcoming challenge. During the public
+ * taking the quiz). It reveals the mole's sabotage orders for the NEXT
+ * challenge, so they can prepare while nobody's watching. During the public
  * mission briefing the mole sees the normal briefing like everyone else, so
  * nothing gives them away.
  *
- * The :quizId param is the CURRENTLY OPEN quiz (the trigger); the briefing shown
- * is for the following round's mission.
+ * Orders are authored right here in this round's QUESTIONS editor (Mole briefing
+ * box) — what you write for a round shows during that round's quiz. The pre-game
+ * briefing has its own mole orders for the very first mission.
  */
 export default function MoleBriefing() {
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
   const session = getSession();
 
-  const [nextTitle, setNextTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tasks, setTasks] = useState<string[]>([]);
-  const [noNext, setNoNext] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,30 +42,19 @@ export default function MoleBriefing() {
       // The quiz that put us here must still be open.
       const { data: cur } = await supabase
         .from('quizzes')
-        .select('round_number,status')
+        .select('status')
         .eq('id', quizId)
         .maybeSingle();
       if (!cur || cur.status !== 'open') {
         navigate('/play/wait', { replace: true });
         return;
       }
-      // Objectives for the NEXT round's mission.
-      const { data: next } = await supabase
-        .from('quizzes')
-        .select('id,title')
-        .eq('round_number', cur.round_number + 1)
-        .maybeSingle();
-      if (!next) {
-        setNoNext(true);
-        setLoading(false);
-        return;
-      }
+      // This round's own sabotage orders (prep for the next challenge).
       const { data: brief } = await supabase.rpc('mole_briefing', {
         p_player: session.id,
-        p_quiz: next.id,
+        p_quiz: quizId,
       });
       const parsed = parseMoleBrief(String(brief ?? ''));
-      setNextTitle(next.title);
       setDescription(parsed.description);
       setTasks(parsed.objectives);
       setLoading(false);
@@ -109,18 +97,12 @@ export default function MoleBriefing() {
         <h2 className="status-headline mole-title">YOU ARE THE MOLE</h2>
 
         {loading ? (
-          <p className="status-sub cursor">DECRYPTING NEXT DIRECTIVE</p>
-        ) : noNext ? (
-          <p className="status-sub">
-            This is the final round — no further missions. Play your last hand and stay
-            hidden.
-          </p>
+          <p className="status-sub cursor">DECRYPTING ORDERS</p>
         ) : (
           <>
-            <p className="mono-label">// NEXT MISSION{nextTitle ? ` — ${nextTitle}` : ''}</p>
+            <p className="mono-label">// YOUR ORDERS FOR THE NEXT CHALLENGE</p>
             <p className="mole-desc">
-              {description ||
-                'Prepare to sabotage the next challenge without being caught.'}
+              {description || 'Prepare to sabotage the next challenge without being caught.'}
             </p>
             {tasks.length > 0 ? (
               <ul className="mole-tasks">
@@ -133,7 +115,7 @@ export default function MoleBriefing() {
               </ul>
             ) : (
               <p className="status-sub">
-                No objectives set for the next mission yet. Improvise — blend in and mislead.
+                No orders set for this round yet. Improvise — blend in and mislead.
               </p>
             )}
           </>

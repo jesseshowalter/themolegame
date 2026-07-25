@@ -52,19 +52,14 @@ export default function IntroBriefing() {
       setTips(parsed.objectives);
       setLoading(false);
 
-      // If this player is the mole, load their round 1 orders privately.
+      // If this player is the mole, load their first-mission orders privately.
+      // Authored in the pre-game briefing's own Mole orders box.
       const { data: amMole } = await supabase.rpc('mole_check', { p_player: session.id });
       if (!amMole) return;
       setIsMole(true);
-      const { data: r1 } = await supabase
-        .from('quizzes')
-        .select('id')
-        .eq('round_number', 1)
-        .maybeSingle();
-      if (!r1) return;
       const { data: brief } = await supabase.rpc('mole_briefing', {
         p_player: session.id,
-        p_quiz: r1.id,
+        p_quiz: quizId,
       });
       const mole = parseMoleBrief(String(brief ?? ''));
       setMoleDesc(mole.description);

@@ -205,12 +205,14 @@ export default function RoundEditor({ round, onClose }: Props) {
         <span className="host-tag">{items.length} question(s)</span>
       </div>
 
-      {/* Mole briefing — only the mole sees this during the round */}
+      {/* Mole orders — shown privately to the mole during THIS round's quiz */}
       <div>
-        <p className="section-label">🕵 Mole briefing — only the Mole sees this</p>
+        <p className="section-label">🕵 Mole orders — only the Mole sees this</p>
         <p className="setup-hint">
-          Players never see this. Set the scene with a description, then list the sabotage
-          objectives — each line becomes its own mission item on the Mole's screen.
+          Players never see this. Shown privately to the Mole during THIS round's quiz (while
+          everyone else answers) — their prep for the next challenge. Set the scene with a
+          description, then list the sabotage objectives; each line becomes its own item on the
+          Mole's screen.
         </p>
 
         <label className="q-label">Description</label>
