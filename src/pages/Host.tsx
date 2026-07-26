@@ -10,6 +10,7 @@ import {
   IMPORT_TEMPLATE,
   type ParsedRound,
 } from '../lib/importQuestions';
+import { parseMoleBrief } from '../lib/moleBriefing';
 
 const PASSCODE = (import.meta.env.VITE_HOST_PASSCODE as string) || 'mole-master';
 const GATE_KEY = 'the-mole:host-unlocked';
@@ -532,7 +533,7 @@ function Dashboard() {
             return (
               <div className="round-row" key={r.id}>
                 <p className="round-row-label">
-                  ROUND {r.round_number} · {r.title}
+                  ROUND {r.round_number} · {parseMoleBrief(r.mission_briefing).title || r.title}
                 </p>
                 <div className="round-row-cards">
                   {/* MISSION */}
