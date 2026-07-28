@@ -80,6 +80,13 @@ export default function PlayLogin() {
       <TerminalChrome status="LOCKED" signal="SECURED">
         <Wordmark size={52} />
         <form className="gate" onSubmit={submitPin}>
+          <div className="roster-avatar login-avatar">
+            {pinFor.avatar_url ? (
+              <img className="avatar-img" src={pinFor.avatar_url} alt="" />
+            ) : (
+              pinFor.name[0]?.toUpperCase() ?? '?'
+            )}
+          </div>
           <p className="mono-label">// IDENTITY: {codenameFor(pinFor.name, pinFor.codename)}</p>
           <p className="roster-intro">Enter your password, {pinFor.name.split(' ')[0]}</p>
           <input

@@ -258,6 +258,17 @@
   font-weight: 700;
   font-size: 18px;
 }
+/* Larger avatar on the password screen, for identity confirmation. */
+.login-avatar {
+  width: 88px;
+  height: 88px;
+  border-width: 2px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-size: 34px;
+  margin: 0 auto 4px;
+  box-shadow: var(--glow-accent);
+}
 .roster-name {
   font-weight: 700;
   font-size: 14px;
