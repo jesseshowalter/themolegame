@@ -40,10 +40,12 @@ export default function WaitRoom() {
       .select('*')
       .order('round_number');
     const rounds = allRounds ?? [];
-    // Bookend briefings live at sentinel round numbers: 0 = pre-game operation
-    // briefing, 99 = endgame reveal. Everything in between is a normal round.
+    // Special briefings live at sentinel round numbers: 0 = pre-game operation
+    // briefing, 99 = endgame final briefing/verdict, 100 = endgame reveal.
+    // Everything in between is a normal round.
     const openIntro = rounds.find((q) => q.round_number === 0 && q.mission_status === 'open');
-    const openEndgame = rounds.find((q) => q.round_number === 99 && q.mission_status === 'open');
+    const openVerdict = rounds.find((q) => q.round_number === 99 && q.mission_status === 'open');
+    const openReveal = rounds.find((q) => q.round_number === 100 && q.mission_status === 'open');
     const openMission = rounds.find(
       (q) => q.round_number > 0 && q.round_number < 99 && q.mission_status === 'open'
     );
@@ -56,9 +58,15 @@ export default function WaitRoom() {
       return;
     }
 
-    // Endgame: the reveal + thank-you, shown to everyone (mole included).
-    if (openEndgame) {
-      navigate(`/play/reveal/${openEndgame.id}`, { replace: true });
+    // Endgame final briefing: the verdict / vote instructions for everyone.
+    if (openVerdict) {
+      navigate(`/play/final/${openVerdict.id}`, { replace: true });
+      return;
+    }
+
+    // Endgame reveal: who the mole was, shown to everyone (mole included).
+    if (openReveal) {
+      navigate(`/play/reveal/${openReveal.id}`, { replace: true });
       return;
     }
 

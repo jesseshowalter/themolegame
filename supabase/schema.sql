@@ -349,17 +349,19 @@ revoke all on function public.admin_get_password(text, uuid) from public;
 grant execute on function public.admin_get_password(text, uuid) to anon, authenticated;
 
 -- ============================================================================
--- Bookend briefings: pre-game OPERATION BRIEFING (round 0) and ENDGAME reveal
--- (round 99). Broadcast like mission briefings (mission_status/mission_briefing)
--- but with no quiz questions. See supabase/briefings.sql for details.
+-- Bookend + endgame briefings: pre-game OPERATION BRIEFING (round 0), endgame
+-- FINAL BRIEFING / VERDICT (round 99) and endgame REVEAL (round 100). Broadcast
+-- like mission briefings (mission_status/mission_briefing) but with no quiz
+-- questions. See supabase/briefings.sql for details.
 -- ============================================================================
 insert into public.quizzes (round_number, title, mission_briefing)
 values
-  (0,  'PRE-GAME', ''),
-  (99, 'ENDGAME',  '')
+  (0,   'PRE-GAME', ''),
+  (99,  'VERDICT',  ''),
+  (100, 'REVEAL',   '')
 on conflict (round_number) do nothing;
 
--- Reveal the mole to everyone, but only once the endgame briefing is open.
+-- Reveal the mole to everyone, but only once the REVEAL (round 100) is open.
 create or replace function public.reveal_mole()
 returns table(name text, codename text, avatar_url text)
 language sql security definer set search_path = public stable as $$
@@ -369,7 +371,7 @@ language sql security definer set search_path = public stable as $$
   where m.id = 1
     and exists (
       select 1 from public.quizzes q
-      where q.round_number = 99 and q.mission_status = 'open'
+      where q.round_number = 100 and q.mission_status = 'open'
     );
 $$;
 revoke all on function public.reveal_mole() from public;

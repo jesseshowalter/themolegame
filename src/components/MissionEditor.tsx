@@ -5,7 +5,7 @@ import { parseMoleBrief, serializeMoleBrief } from '../lib/moleBriefing';
 
 const PASSCODE = (import.meta.env.VITE_HOST_PASSCODE as string) || 'mole-master';
 
-type Variant = 'mission' | 'intro' | 'endgame';
+type Variant = 'mission' | 'intro' | 'verdict' | 'endgame';
 
 interface Props {
   round: Quiz;
@@ -49,6 +49,19 @@ const COPY: Record<Variant, {
     objLabel: 'Strategy tips / what to look out for — one per line',
     objPlaceholder:
       'Watch for someone quietly steering the group toward failure\nWrong answers on the quiz cost you — but so does over-trusting\nKeep notes; the Mole blends in',
+  },
+  verdict: {
+    heading: () => 'ENDGAME · FINAL BRIEFING',
+    sectionLabel: 'Final briefing — the verdict instructions shown when you launch it',
+    hint: "The last briefing before the reveal. Tell the remaining players how to cast their vote for who the Mole is. Each step line becomes its own item on the players' screens.",
+    titleLabel: 'Briefing title — the large heading players see',
+    titlePlaceholder: 'THE VERDICT',
+    descLabel: 'Instructions',
+    descPlaceholder:
+      'This is it. Each of you still in the game: grab a whiteboard and secretly write the name of the person you believe is the Mole. Do NOT show anyone yet. When the host gives the word, reveal your boards all at once.',
+    objLabel: 'Steps — one per line',
+    objPlaceholder:
+      'Write one name on your whiteboard — the Mole\nKeep it hidden until the host says reveal\nOn the count of three, show your board',
   },
   endgame: {
     heading: () => 'ENDGAME · THE REVEAL',

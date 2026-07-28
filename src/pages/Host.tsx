@@ -15,13 +15,22 @@ import { parseMoleBrief } from '../lib/moleBriefing';
 const PASSCODE = (import.meta.env.VITE_HOST_PASSCODE as string) || 'mole-master';
 const GATE_KEY = 'the-mole:host-unlocked';
 
-// Bookend briefings live at sentinel round numbers, outside the normal 1..N
-// rounds: 0 = pre-game operation briefing, 99 = endgame reveal.
+// Special briefings live at sentinel round numbers, outside the normal 1..N
+// rounds: 0 = pre-game operation briefing, 99 = endgame final briefing/verdict,
+// 100 = endgame mole reveal.
 const INTRO_ROUND = 0;
-const ENDGAME_ROUND = 99;
-const isSpecialRound = (n: number) => n === INTRO_ROUND || n === ENDGAME_ROUND;
-const briefingVariant = (n: number): 'mission' | 'intro' | 'endgame' =>
-  n === INTRO_ROUND ? 'intro' : n === ENDGAME_ROUND ? 'endgame' : 'mission';
+const VERDICT_ROUND = 99;
+const REVEAL_ROUND = 100;
+const isSpecialRound = (n: number) =>
+  n === INTRO_ROUND || n === VERDICT_ROUND || n === REVEAL_ROUND;
+const briefingVariant = (n: number): 'mission' | 'intro' | 'verdict' | 'endgame' =>
+  n === INTRO_ROUND
+    ? 'intro'
+    : n === VERDICT_ROUND
+      ? 'verdict'
+      : n === REVEAL_ROUND
+        ? 'endgame'
+        : 'mission';
 
 // Consistent phase-state labels: locked (gray) / active (green) / closed (red).
 // The raw status doubles as the CSS class for color; only the text changes.
@@ -421,51 +430,43 @@ function Dashboard() {
     );
   }
 
-  // Split the bookend briefings out from the normal 1..N rounds.
+  // Split the special briefings out from the normal 1..N rounds.
   const intro = rounds.find((r) => r.round_number === INTRO_ROUND);
-  const endgame = rounds.find((r) => r.round_number === ENDGAME_ROUND);
+  const verdict = rounds.find((r) => r.round_number === VERDICT_ROUND);
+  const reveal = rounds.find((r) => r.round_number === REVEAL_ROUND);
   const normalRounds = rounds.filter((r) => !isSpecialRound(r.round_number));
 
-  // A single full-width briefing card (pre-game / endgame) — like a round's
-  // mission card but standalone, with no paired quiz.
+  // One broadcast briefing card (pre-game / verdict / reveal) — like a round's
+  // mission card but with no paired quiz.
   function briefingCard(
     row: Quiz,
-    opts: { rowLabel: string; num: string; title: string; launchLabel: string }
+    opts: { num: string; title: string; launchLabel: string }
   ) {
     const status = row.mission_status ?? 'locked';
     return (
-      <div className="round-row" key={row.id}>
-        <p className="round-row-label">{opts.rowLabel}</p>
-        <div className="round-row-cards solo">
-          <div className={`round-card briefing-card${status === 'open' ? ' active' : ''}`}>
-            <div className="round-card-top">
-              <span className="round-num">{opts.num}</span>
-              <button className="round-edit" onClick={() => setEditingMissionId(row.id)}>
-                BRIEFING ›
-              </button>
-            </div>
-            <span className="round-title">{opts.title}</span>
-            <span className={`round-status ${status}`}>● {phaseLabel(status)}</span>
-            <div className="round-actions">
-              {status !== 'open' ? (
-                <button
-                  className="btn-sm"
-                  disabled={busy}
-                  onClick={() => setMissionStatus(row, 'open')}
-                >
-                  {opts.launchLabel}
-                </button>
-              ) : (
-                <button
-                  className="btn-sm warn"
-                  disabled={busy}
-                  onClick={() => setMissionStatus(row, 'closed')}
-                >
-                  Close
-                </button>
-              )}
-            </div>
-          </div>
+      <div className={`round-card briefing-card${status === 'open' ? ' active' : ''}`}>
+        <div className="round-card-top">
+          <span className="round-num">{opts.num}</span>
+          <button className="round-edit" onClick={() => setEditingMissionId(row.id)}>
+            BRIEFING ›
+          </button>
+        </div>
+        <span className="round-title">{opts.title}</span>
+        <span className={`round-status ${status}`}>● {phaseLabel(status)}</span>
+        <div className="round-actions">
+          {status !== 'open' ? (
+            <button className="btn-sm" disabled={busy} onClick={() => setMissionStatus(row, 'open')}>
+              {opts.launchLabel}
+            </button>
+          ) : (
+            <button
+              className="btn-sm warn"
+              disabled={busy}
+              onClick={() => setMissionStatus(row, 'closed')}
+            >
+              Close
+            </button>
+          )}
         </div>
       </div>
     );
@@ -518,14 +519,20 @@ function Dashboard() {
       {tab === 'rounds' && (
       <div>
         {/* Pre-game operation briefing — sits above round one. */}
-        {intro
-          ? briefingCard(intro, {
-              rowLabel: 'PRE-GAME · OPERATION BRIEFING',
-              num: 'BRIEFING',
-              title: 'Operation briefing',
-              launchLabel: 'Launch Briefing',
-            })
-          : missingBriefingHint}
+        {intro ? (
+          <div className="round-row">
+            <p className="round-row-label">PRE-GAME · OPERATION BRIEFING</p>
+            <div className="round-row-cards solo">
+              {briefingCard(intro, {
+                num: 'BRIEFING',
+                title: 'Operation briefing',
+                launchLabel: 'Launch Briefing',
+              })}
+            </div>
+          </div>
+        ) : (
+          missingBriefingHint
+        )}
 
         <div className="round-rows">
           {normalRounds.map((r) => {
@@ -605,14 +612,26 @@ function Dashboard() {
           })}
         </div>
 
-        {/* Endgame reveal — the final row after round four. */}
-        {endgame &&
-          briefingCard(endgame, {
-            rowLabel: 'ENDGAME · THE REVEAL',
-            num: 'REVEAL',
-            title: 'The Mole revealed',
-            launchLabel: 'Reveal the Mole',
-          })}
+        {/* Endgame — a final briefing (the verdict) then the mole reveal. */}
+        {(verdict || reveal) && (
+          <div className="round-row">
+            <p className="round-row-label">ENDGAME · THE VERDICT</p>
+            <div className="round-row-cards">
+              {verdict &&
+                briefingCard(verdict, {
+                  num: 'FINAL BRIEFING',
+                  title: 'The verdict',
+                  launchLabel: 'Send Final Briefing',
+                })}
+              {reveal &&
+                briefingCard(reveal, {
+                  num: 'REVEAL',
+                  title: 'The Mole revealed',
+                  launchLabel: 'Reveal the Mole',
+                })}
+            </div>
+          </div>
+        )}
       </div>
       )}
 
