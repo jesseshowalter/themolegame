@@ -208,59 +208,6 @@ export default function RoundEditor({ round, onClose }: Props) {
         <span className="host-tag">{items.length} question(s)</span>
       </div>
 
-      {/* Mole orders — shown privately to the mole during THIS round's quiz */}
-      <div className="mole-orders" style={{ marginTop: 24 }}>
-        <p className="section-label">🕵 Mole orders — only the Mole sees this</p>
-        <p className="setup-hint">
-          Players never see this. Shown privately to the Mole during THIS round's quiz (while
-          everyone else answers) — their prep for the next challenge. Set the scene with a
-          description, then list the sabotage objectives; each line becomes its own item on the
-          Mole's screen.
-        </p>
-
-        <label className="q-label">Description</label>
-        <textarea
-          className="import-area"
-          style={{ minHeight: 80 }}
-          spellCheck={false}
-          placeholder="This round the team builds the best poker hand by collecting cards. Blend in while you undermine them."
-          value={briefDesc}
-          onChange={(e) => {
-            setBriefDesc(e.target.value);
-            setBriefingMsg(null);
-          }}
-        />
-
-        <label className="q-label">Objectives — one per line</label>
-        <textarea
-          className="import-area"
-          style={{ minHeight: 120 }}
-          spellCheck={false}
-          placeholder={'Collect the worst cards you can\nSlow the group down by being indecisive\nThrow suspicion on someone who pulls a bad card'}
-          value={briefObjectives}
-          onChange={(e) => {
-            setBriefObjectives(e.target.value);
-            setBriefingMsg(null);
-          }}
-        />
-
-        <div className="round-actions" style={{ marginTop: 8 }}>
-          <button
-            className="btn-sm"
-            style={{ flex: 'unset' }}
-            disabled={busy}
-            onClick={saveBriefing}
-          >
-            Save briefing
-          </button>
-          {briefingMsg && (
-            <span className="mono-dim" style={{ alignSelf: 'center' }}>
-              {briefingMsg}
-            </span>
-          )}
-        </div>
-      </div>
-
       {!loading && !hasKey && items.length > 0 && (
         <p className="mono-dim">
           Correct answers are hidden. To highlight them here, run{' '}
@@ -436,6 +383,60 @@ export default function RoundEditor({ round, onClose }: Props) {
           </div>
         </div>
       )}
+
+      {/* Mole orders sit BELOW the questions: the questions are about the round
+          just played, but these orders prep the Mole for the NEXT round. */}
+      <div className="mole-orders" style={{ marginTop: 32 }}>
+        <p className="section-label">🕵 Mole orders — only the Mole sees this</p>
+        <p className="setup-hint">
+          Players never see this. Shown privately to the Mole during THIS round's quiz (while
+          everyone else answers) — their prep for the next challenge. Set the scene with a
+          description, then list the sabotage objectives; each line becomes its own item on the
+          Mole's screen.
+        </p>
+
+        <label className="q-label">Description</label>
+        <textarea
+          className="import-area"
+          style={{ minHeight: 80 }}
+          spellCheck={false}
+          placeholder="This round the team builds the best poker hand by collecting cards. Blend in while you undermine them."
+          value={briefDesc}
+          onChange={(e) => {
+            setBriefDesc(e.target.value);
+            setBriefingMsg(null);
+          }}
+        />
+
+        <label className="q-label">Objectives — one per line</label>
+        <textarea
+          className="import-area"
+          style={{ minHeight: 120 }}
+          spellCheck={false}
+          placeholder={'Collect the worst cards you can\nSlow the group down by being indecisive\nThrow suspicion on someone who pulls a bad card'}
+          value={briefObjectives}
+          onChange={(e) => {
+            setBriefObjectives(e.target.value);
+            setBriefingMsg(null);
+          }}
+        />
+
+        <div className="round-actions" style={{ marginTop: 8 }}>
+          <button
+            className="btn-sm"
+            style={{ flex: 'unset' }}
+            disabled={busy}
+            onClick={saveBriefing}
+          >
+            Save briefing
+          </button>
+          {briefingMsg && (
+            <span className="mono-dim" style={{ alignSelf: 'center' }}>
+              {briefingMsg}
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
