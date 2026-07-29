@@ -203,7 +203,7 @@ export default function RoundEditor({ round, onClose }: Props) {
           ← Dashboard
         </button>
         <div className="editor-title">
-          ROUND {round.round_number} · {round.title}
+          ROUND {round.round_number} · {parseMoleBrief(round.mission_briefing).title || round.title}
         </div>
         <span className="host-tag">{items.length} question(s)</span>
       </div>

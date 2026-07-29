@@ -27,7 +27,7 @@ const COPY: Record<Variant, {
   objPlaceholder: string;
 }> = {
   mission: {
-    heading: (r) => `ROUND ${r.round_number} · ${r.title} — MISSION`,
+    heading: (r) => `ROUND ${r.round_number} · ${parseMoleBrief(r.mission_briefing).title || r.title} — MISSION`,
     sectionLabel: 'Mission briefing — shown to all players when you send it',
     hint: "Name the mission, describe the challenge, then list what players should do. Each objective line becomes its own item on the players' screens.",
     titleLabel: 'Mission title — the large heading players see',
