@@ -9,7 +9,7 @@ import Wordmark from '../components/Wordmark';
 import Chevron from '../components/Chevron';
 import EliminatedBanner from '../components/EliminatedBanner';
 
-const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
 export default function Quiz() {
   const { quizId } = useParams<{ quizId: string }>();

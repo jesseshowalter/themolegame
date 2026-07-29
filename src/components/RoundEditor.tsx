@@ -10,7 +10,8 @@ import { parseMoleBrief, serializeMoleBrief } from '../lib/moleBriefing';
  */
 type Row = Omit<Question, 'correct_index'> & { correct_index?: number };
 
-const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+const MAX_OPTIONS = 10;
 const PASSCODE = (import.meta.env.VITE_HOST_PASSCODE as string) || 'mole-master';
 
 interface Draft {
@@ -131,7 +132,9 @@ export default function RoundEditor({ round, onClose }: Props) {
     });
 
   const addOpt = () =>
-    setDraft((d) => (d && d.options.length < 8 ? { ...d, options: [...d.options, ''] } : d));
+    setDraft((d) =>
+      d && d.options.length < MAX_OPTIONS ? { ...d, options: [...d.options, ''] } : d
+    );
 
   const removeOpt = (i: number) =>
     setDraft((d) => {
@@ -390,7 +393,7 @@ export default function RoundEditor({ round, onClose }: Props) {
                 )}
               </div>
             ))}
-            {draft.type === 'mc' && draft.options.length < 8 && (
+            {draft.type === 'mc' && draft.options.length < MAX_OPTIONS && (
               <button className="btn-sm" style={{ flex: 'unset' }} onClick={addOpt}>
                 + Add option
               </button>

@@ -148,8 +148,8 @@ export function parseQuestionImport(text: string): ParseResult {
         errors.push(`${qwhere}: multiple-choice question needs an "options" array.`);
         return;
       }
-      if (options.length > 8) {
-        errors.push(`${qwhere}: max 8 options (got ${options.length}).`);
+      if (options.length > 10) {
+        errors.push(`${qwhere}: max 10 options (got ${options.length}).`);
         return;
       }
 
