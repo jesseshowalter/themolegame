@@ -302,6 +302,52 @@
   letter-spacing: 0.05em;
   line-height: 1.6;
 }
+/* Full-screen red "ELIMINATED" flash when the host eliminates you live (~3s). */
+.eliminated-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: rgba(255, 59, 48, 0.85); /* steady fallback (reduced motion) */
+  animation: elim-flash 3s ease forwards;
+}
+.eliminated-flash-text {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-style: italic;
+  font-size: clamp(40px, 12.5vw, 130px);
+  letter-spacing: 0.02em;
+  padding: 0 12px;
+  text-align: center;
+  color: var(--white);
+  text-shadow: 0 0 40px rgba(0, 0, 0, 0.7);
+  animation: elim-flash-text 3s ease forwards;
+}
+@keyframes elim-flash {
+  0% { background: rgba(255, 59, 48, 0); }
+  8% { background: rgba(255, 59, 48, 0.92); }
+  16% { background: rgba(255, 59, 48, 0.12); }
+  24% { background: rgba(255, 59, 48, 0.92); }
+  32% { background: rgba(255, 59, 48, 0.12); }
+  40% { background: rgba(255, 59, 48, 0.92); }
+  50% { background: rgba(255, 59, 48, 0.35); }
+  80% { background: rgba(255, 59, 48, 0.9); }
+  100% { background: rgba(255, 59, 48, 0); }
+}
+@keyframes elim-flash-text {
+  0% { opacity: 0; transform: scale(1.35); }
+  12% { opacity: 1; transform: scale(1); }
+  82% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.05); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eliminated-flash { animation: none; }
+  .eliminated-flash-text { animation: none; opacity: 1; }
+}
+
 .eliminated-banner {
   color: var(--danger);
   border: 1px solid var(--danger);

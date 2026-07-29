@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { getSession } from '../lib/session';
@@ -16,6 +16,9 @@ export default function WaitRoom() {
   const [eliminated, setEliminated] = useState(false);
   const [completedRound, setCompletedRound] = useState<Quiz | null>(null);
   const [checking, setChecking] = useState(true);
+  // 3-second red "ELIMINATED" flash when the host eliminates you live.
+  const [flash, setFlash] = useState(false);
+  const wasEliminatedRef = useRef<boolean | null>(null);
 
   // Decide where the player should be: into an open round they haven't finished,
   // eliminated screen, or a holding pattern.
@@ -33,7 +36,14 @@ export default function WaitRoom() {
       .maybeSingle();
     // Eliminated players stay in the field for the Rogue Agent prize: we note
     // the flag (for status + copy) but keep routing them into rounds normally.
-    setEliminated(!!me?.is_eliminated);
+    const elim = !!me?.is_eliminated;
+    // Flash "ELIMINATED" only on the live transition (not on first load).
+    if (wasEliminatedRef.current === false && elim) {
+      setFlash(true);
+      window.setTimeout(() => setFlash(false), 3000);
+    }
+    wasEliminatedRef.current = elim;
+    setEliminated(elim);
 
     const { data: allRounds } = await supabase
       .from('quizzes')
@@ -134,6 +144,12 @@ export default function WaitRoom() {
       avatarUrl={session?.avatar}
       status={eliminated ? 'ELIMINATED' : 'STANDBY'}
     >
+      {flash && (
+        <div className="eliminated-flash" aria-hidden="true">
+          <span className="eliminated-flash-text">ELIMINATED</span>
+        </div>
+      )}
+
       <div className="header">
         <Wordmark size={52} />
       </div>
