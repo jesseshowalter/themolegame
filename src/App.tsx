@@ -10,6 +10,7 @@ import FinalBriefing from './pages/FinalBriefing';
 import Reveal from './pages/Reveal';
 import Host from './pages/Host';
 import Join from './pages/Join';
+import ObserveHarness from './games/surveillance/ObserveHarness';
 
 export default function App() {
   return (
@@ -25,6 +26,9 @@ export default function App() {
       <Route path="/play/reveal/:quizId" element={<Reveal />} />
       <Route path="/play/mole/:quizId" element={<MoleBriefing />} />
       <Route path="/play/done/:quizId" element={<Done />} />
+
+      {/* Surveillance game — Phase 2 observe harness (dev) */}
+      <Route path="/surveillance" element={<ObserveHarness />} />
 
       {/* Host-only */}
       <Route path="/host" element={<Host />} />
